@@ -15,6 +15,15 @@ const PHASES = [
 
 const PROJECTS = [
   {
+    id: 'vordu',
+    name: 'Vörðu',
+    rows: [
+      { id: 'frontend', label: 'Frontend (UI)' },
+      { id: 'api', label: 'API (Backend)' },
+      { id: 'database', label: 'Database' }
+    ]
+  },
+  {
     id: 'demicracy',
     name: 'Demicracy',
     rows: [
@@ -73,6 +82,25 @@ function App() {
         completion: 25,
         updateText: 'Agent framework scaffolding',
         link: 'https://github.com/Cervator/autoboros'
+      },
+      // Vörðu Self-Test Items
+      {
+        project: 'vordu',
+        row: 'frontend',
+        phase: 0,
+        status: 'pass',
+        completion: 80,
+        updateText: 'Matrix & Overlay implemented',
+        link: 'https://github.com/Cervator/vordu'
+      },
+      {
+        project: 'vordu',
+        row: 'api',
+        phase: 0,
+        status: 'pending',
+        completion: 30,
+        updateText: 'Ingestion endpoint pending',
+        link: 'https://github.com/Cervator/vordu'
       },
     ]);
   }, []);

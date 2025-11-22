@@ -65,12 +65,12 @@ export const TopBar = ({ projectName = "Yggdrasil" }: TopBarProps) => {
                             >
                                 <div className="space-y-2 mt-4">
                                     <p className="text-gray-300 text-xl max-w-3xl leading-relaxed">
-                                        The Living Roadmap. Visualizing project maturity via Behavior Driven Development.
+                                        The Living Roadmap. Visualizing ecosystem maturity via Behavior Driven Development.
                                     </p>
                                     <p className="text-gray-400 text-base max-w-3xl">
-                                        Track the evolution of your ecosystem across multiple dimensions.
-                                        Green cells indicate verified capabilities, while red highlights areas needing attention.
-                                        Drill down into any cell to see the underlying Gherkin features.
+                                        Track evolution of projects across multiple dimensions as they progress (color in).
+                                        Columns are time or maturity, sections are projects, rows are capabilities.
+                                        Click any cell to see the underlying Gherkin details.
                                     </p>
                                 </div>
 

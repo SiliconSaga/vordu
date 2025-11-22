@@ -1,4 +1,8 @@
 fastapi
 uvicorn
+pytest
+pytest-bdd
+playwright
+requests
 sqlalchemy
 pydantic
