@@ -19,6 +19,7 @@ class MatrixCell(Base):
     row_id = Column(String) # The capability ID (e.g., "identity")
     phase_id = Column(Integer) # 0, 1, 2, 3
     status = Column(String) # "pass", "fail", "pending"
+    completion = Column(Integer, default=0) # 0-100
 
 def get_db():
     db = SessionLocal()

@@ -45,64 +45,82 @@ function App() {
   const [selectedCell, setSelectedCell] = useState<any>(null);
 
   useEffect(() => {
-    // Simulate fetching data with completion percentages
-    setMatrixState([
-      {
-        project: 'demicracy',
-        row: 'identity',
-        phase: 0,
-        status: 'pass',
-        completion: 100,
-        updateText: 'Core identity module verified',
-        link: 'https://github.com/Cervator/demicracy'
-      },
-      {
-        project: 'demicracy',
-        row: 'identity',
-        phase: 1,
-        status: 'pending',
-        completion: 40,
-        updateText: 'OAuth integration in progress',
-        link: 'https://github.com/Cervator/demicracy/issues'
-      },
-      {
-        project: 'demicracy',
-        row: 'governance',
-        phase: 1,
-        status: 'fail',
-        completion: 10,
-        updateText: 'Voting mechanism failing tests',
-        link: 'https://github.com/Cervator/demicracy/actions'
-      },
-      {
-        project: 'autoboros',
-        row: 'agents',
-        phase: 0,
-        status: 'pending',
-        completion: 25,
-        updateText: 'Agent framework scaffolding',
-        link: 'https://github.com/Cervator/autoboros'
-      },
-      // Vörðu Self-Test Items
-      {
-        project: 'vordu',
-        row: 'frontend',
-        phase: 0,
-        status: 'pass',
-        completion: 80,
-        updateText: 'Matrix & Overlay implemented',
-        link: 'https://github.com/Cervator/vordu'
-      },
-      {
-        project: 'vordu',
-        row: 'api',
-        phase: 0,
-        status: 'pending',
-        completion: 30,
-        updateText: 'Ingestion endpoint pending',
-        link: 'https://github.com/Cervator/vordu'
-      },
-    ]);
+    const fetchData = async () => {
+      // 1. Initial Mock Data (Demicracy & Autoboros)
+      const initialData = [
+        {
+          project: 'demicracy',
+          row: 'identity',
+          phase: 0,
+          status: 'pass',
+          completion: 100,
+          updateText: 'Core identity module verified',
+          link: 'https://github.com/Cervator/demicracy'
+        },
+        {
+          project: 'demicracy',
+          row: 'identity',
+          phase: 1,
+          status: 'pending',
+          completion: 40,
+          updateText: 'OAuth integration in progress',
+          link: 'https://github.com/Cervator/demicracy/issues'
+        },
+        {
+          project: 'demicracy',
+          row: 'governance',
+          phase: 1,
+          status: 'fail',
+          completion: 10,
+          updateText: 'Voting mechanism failing tests',
+          link: 'https://github.com/Cervator/demicracy/actions'
+        },
+        {
+          project: 'autoboros',
+          row: 'agents',
+          phase: 0,
+          status: 'pending',
+          completion: 25,
+          updateText: 'Agent framework scaffolding',
+          link: 'https://github.com/Cervator/autoboros'
+        },
+      ];
+
+      try {
+        // 2. Fetch Real Data from API
+        const response = await fetch('http://localhost:8000/matrix');
+        if (response.ok) {
+          const apiData = await response.json();
+
+          // 3. Merge Data (API overrides mock if matches, otherwise appends)
+          const mergedData = [...initialData];
+
+          apiData.forEach((apiItem: any) => {
+            const existingIndex = mergedData.findIndex(
+              item => item.project === apiItem.project &&
+                item.row === apiItem.row &&
+                item.phase === apiItem.phase
+            );
+
+            if (existingIndex >= 0) {
+              mergedData[existingIndex] = { ...mergedData[existingIndex], ...apiItem };
+            } else {
+              mergedData.push(apiItem);
+            }
+          });
+
+          setMatrixState(mergedData);
+        } else {
+          console.error("Failed to fetch matrix data");
+          setMatrixState(initialData);
+        }
+      } catch (error) {
+        console.error("Error connecting to API:", error);
+        setMatrixState(initialData);
+      }
+    };
+
+    fetchData();
   }, []);
 
   const getCellData = (project: string, row: string, phase: number) => {

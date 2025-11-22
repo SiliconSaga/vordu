@@ -19,30 +19,36 @@ def post_cucumber_report(api_base_url):
     # Mock Cucumber JSON payload
     payload = [
         {
-            "id": "test-feature",
-            "name": "Test Feature",
-            "elements": [
-                {
-                    "id": "test-scenario",
-                    "name": "Test Scenario",
-                    "steps": [
-                        {"result": {"status": "passed"}}
-                    ]
-                }
-            ]
+            "project_name": "vordu-test",
+            "row_id": "api-test",
+            "phase_id": 0,
+            "status": "pass",
+            "completion": 100
         }
     ]
-    # In a real test, we'd post this. For now, we'll simulate or skip if endpoint isn't ready.
-    # response = requests.post(f"{api_base_url}/ingest", json=payload)
-    # pytest.response = response
-    pass
+    try:
+        response = requests.post(f"{api_base_url}/ingest", json=payload)
+        pytest.response = response
+    except requests.exceptions.ConnectionError:
+        pytest.fail("Failed to connect to API")
 
 @then('the response status should be 200')
 def response_status_200():
-    # assert pytest.response.status_code == 200
-    pass
+    assert hasattr(pytest, 'response'), "No response captured"
+    assert pytest.response.status_code == 200
 
 @then('the database should contain the new test results')
-def database_contains_results():
-    # Query the DB or API to verify
-    pass
+def database_contains_results(api_base_url):
+    # Query the API to verify persistence
+    response = requests.get(f"{api_base_url}/matrix")
+    assert response.status_code == 200
+    data = response.json()
+    
+    # Find our test item
+    found = any(
+        item['project'] == 'vordu-test' and 
+        item['row'] == 'api-test' and 
+        item['completion'] == 100 
+        for item in data
+    )
+    assert found, "Ingested item not found in matrix"
