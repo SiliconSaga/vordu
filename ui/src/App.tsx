@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { MatrixCell } from './components/MatrixCell';
+import { TopBar } from './components/TopBar';
 import './App.css';
 
 // Mock Data for now
@@ -45,17 +46,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-dark-bg text-white p-8 font-sans">
-      <header className="mb-12 flex items-center gap-4">
-        <div className="w-16 h-16 rounded-full flex items-center justify-center shadow-neon overflow-hidden">
-          <img src="/logo.png" alt="Vörðu Logo" className="w-full h-full object-cover" />
-        </div>
-        <h1 className="text-4xl font-bold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-blue">
-          VÖRÐU
-        </h1>
-      </header>
+    <div className="min-h-screen bg-dark-bg text-white font-sans">
+      <TopBar/>
 
-      <div className="space-y-16">
+      <div className="p-8 space-y-16">
         {PROJECTS.map(project => (
           <section key={project.id} className="relative">
             {/* Project Header */}
