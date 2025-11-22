@@ -26,6 +26,10 @@ class IngestItem(BaseModel):
     phase_id: int
     status: str  # "pass", "fail", "pending"
     completion: int
+    scenarios_total: int
+    scenarios_passed: int
+    steps_total: int
+    steps_passed: int
 
 class MatrixResponse(BaseModel):
     project: str
@@ -33,6 +37,10 @@ class MatrixResponse(BaseModel):
     phase: int
     status: str
     completion: int
+    scenarios_total: int
+    scenarios_passed: int
+    steps_total: int
+    steps_passed: int
 
 @app.get("/")
 def read_root():
@@ -55,12 +63,20 @@ def ingest_status(items: List[IngestItem], db: Session = Depends(get_db)):
                 row_id=item.row_id,
                 phase_id=item.phase_id,
                 status=item.status,
-                completion=item.completion
+                completion=item.completion,
+                scenarios_total=item.scenarios_total,
+                scenarios_passed=item.scenarios_passed,
+                steps_total=item.steps_total,
+                steps_passed=item.steps_passed
             )
             db.add(cell)
         else:
             cell.status = item.status
             cell.completion = item.completion
+            cell.scenarios_total = item.scenarios_total
+            cell.scenarios_passed = item.scenarios_passed
+            cell.steps_total = item.steps_total
+            cell.steps_passed = item.steps_passed
         updated_count += 1
     
     db.commit()
@@ -75,6 +91,10 @@ def get_matrix(db: Session = Depends(get_db)):
             row=c.row_id,
             phase=c.phase_id,
             status=c.status,
-            completion=c.completion
+            completion=c.completion,
+            scenarios_total=c.scenarios_total,
+            scenarios_passed=c.scenarios_passed,
+            steps_total=c.steps_total,
+            steps_passed=c.steps_passed
         ) for c in cells
     ]

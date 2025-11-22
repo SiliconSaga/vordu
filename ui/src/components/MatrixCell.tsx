@@ -6,12 +6,26 @@ interface MatrixCellProps {
     phase: number;
     status: 'pass' | 'fail' | 'pending' | 'empty';
     completion?: number; // 0-100
+    scenariosTotal?: number;
+    scenariosPassed?: number;
+    stepsTotal?: number;
+    stepsPassed?: number;
     color?: string;
     label?: string;
     onClick?: () => void;
 }
 
-export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, onClick }: MatrixCellProps) => {
+export const MatrixCell = ({
+    status,
+    completion = 0,
+    scenariosTotal = 0,
+    scenariosPassed = 0,
+    stepsTotal = 0,
+    stepsPassed = 0,
+    color = '#39ff14',
+    label,
+    onClick
+}: MatrixCellProps) => {
     // Calculate opacity: 10% baseline + up to 90% based on completion
     const opacity = 0.1 + (Math.min(100, Math.max(0, completion)) / 100) * 0.9;
 
@@ -36,11 +50,20 @@ export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, o
             <div className="relative z-10 flex flex-col items-center text-center gap-0.5 w-full">
                 {label && <span className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color }}>{label}</span>}
 
-                {/* Percentage (only if started) */}
-                {completion > 0 && (
-                    <span className="text-3xl font-black drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
-                        {completion}%
-                    </span>
+                {/* Content: Metrics OR Percentage */}
+                {(completion > 0 || scenariosTotal > 0) && (
+                    <>
+                        {(scenariosTotal > 0 || stepsTotal > 0) ? (
+                            <div className="flex flex-row items-center justify-center gap-3 text-base font-bold font-mono drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
+                                <span>S:{scenariosPassed}/{scenariosTotal}</span>
+                                <span>T:{stepsPassed}/{stepsTotal}</span>
+                            </div>
+                        ) : (
+                            <span className="text-3xl font-black drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
+                                {completion}%
+                            </span>
+                        )}
+                    </>
                 )}
 
                 {/* Empty State Indicator */}

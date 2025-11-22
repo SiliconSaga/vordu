@@ -11,7 +11,7 @@ export const TopBar = ({ projectName = "Yggdrasil" }: TopBarProps) => {
     return (
         <motion.div
             initial={false}
-            animate={{ height: isCollapsed ? '80px' : '300px' }}
+            animate={{ height: isCollapsed ? '100px' : '300px' }}
             className="w-full bg-panel-bg border-b border-gray-800 relative overflow-hidden transition-all duration-500 ease-in-out z-50"
         >
             {/* GitHub Ribbon */}
@@ -30,11 +30,21 @@ export const TopBar = ({ projectName = "Yggdrasil" }: TopBarProps) => {
             </div>
 
             {/* Toggle Button */}
+            {/* Toggle Button */}
             <button
                 onClick={() => setIsCollapsed(!isCollapsed)}
-                className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 w-8 h-8 bg-gray-800 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-neon-green hover:border-neon-green transition-colors z-50 cursor-pointer"
+                className="absolute bottom-4 left-8 w-10 h-10 bg-gray-900/80 border border-gray-700 rounded-full flex items-center justify-center text-gray-400 hover:text-neon-green hover:border-neon-green hover:bg-gray-800 transition-all z-50 cursor-pointer shadow-lg backdrop-blur-sm"
+                title={isCollapsed ? "Expand Header" : "Collapse Header"}
             >
-                {isCollapsed ? '▼' : '▲'}
+                {isCollapsed ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                )}
             </button>
 
             <div className="container mx-auto h-full flex items-center px-8 gap-12">
@@ -65,7 +75,7 @@ export const TopBar = ({ projectName = "Yggdrasil" }: TopBarProps) => {
                             >
                                 <div className="space-y-2 mt-4">
                                     <p className="text-gray-300 text-xl max-w-3xl leading-relaxed">
-                                        The Living Roadmap. Visualizing ecosystem maturity via Behavior Driven Development.
+                                        Living Roadmap. Visualizing ecosystem maturity via Behavior Driven Development.
                                     </p>
                                     <p className="text-gray-400 text-base max-w-3xl">
                                         Track evolution of projects across multiple dimensions as they progress (color in).

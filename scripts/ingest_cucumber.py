@@ -33,19 +33,33 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
             if project and row and phase:
                 key = f"{project}::{row}::{phase}"
                 if key not in cells:
-                    cells[key] = {'total': 0, 'passed': 0, 'project': project, 'row': row, 'phase': int(phase)}
+                    cells[key] = {
+                        'project': project, 
+                        'row': row, 
+                        'phase': int(phase),
+                        'scenarios_total': 0,
+                        'scenarios_passed': 0,
+                        'steps_total': 0,
+                        'steps_passed': 0
+                    }
                 
-                cells[key]['total'] += 1
+                cells[key]['scenarios_total'] += 1
                 
-                # Check if all steps passed
+                # Check steps
                 steps = element.get('steps', [])
-                is_passed = all(step['result']['status'] == 'passed' for step in steps)
+                step_count = len(steps)
+                passed_step_count = sum(1 for step in steps if step['result']['status'] == 'passed')
+                
+                cells[key]['steps_total'] += step_count
+                cells[key]['steps_passed'] += passed_step_count
+
+                is_passed = (step_count > 0) and (step_count == passed_step_count)
                 if is_passed:
-                    cells[key]['passed'] += 1
+                    cells[key]['scenarios_passed'] += 1
 
     # Convert to IngestItem format
     for key, data in cells.items():
-        completion = int((data['passed'] / data['total']) * 100) if data['total'] > 0 else 0
+        completion = int((data['scenarios_passed'] / data['scenarios_total']) * 100) if data['scenarios_total'] > 0 else 0
         
         # Determine status based on completion (simplified logic)
         if completion == 100:
@@ -60,7 +74,11 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
             "row_id": data['row'],
             "phase_id": data['phase'],
             "status": status,
-            "completion": completion
+            "completion": completion,
+            "scenarios_total": data['scenarios_total'],
+            "scenarios_passed": data['scenarios_passed'],
+            "steps_total": data['steps_total'],
+            "steps_passed": data['steps_passed']
         })
 
     return ingest_items

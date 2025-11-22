@@ -20,6 +20,12 @@ class MatrixCell(Base):
     phase_id = Column(Integer) # 0, 1, 2, 3
     status = Column(String) # "pass", "fail", "pending"
     completion = Column(Integer, default=0) # 0-100
+    
+    # Granular Metrics
+    scenarios_total = Column(Integer, default=0)
+    scenarios_passed = Column(Integer, default=0)
+    steps_total = Column(Integer, default=0)
+    steps_passed = Column(Integer, default=0)
 
 def get_db():
     db = SessionLocal()

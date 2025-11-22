@@ -144,6 +144,13 @@ function App() {
         color={selectedCell?.color || '#fff'}
       />
 
+      {/* Legend */}
+      <div className="flex justify-center items-center gap-6 text-xs text-gray-500 font-mono uppercase tracking-wider py-4 border-b border-gray-900/50">
+        <span>Color intensity = Completion</span>
+        <span>S = Scenarios (Completed/Total)</span>
+        <span>T = Tests (Passing/Total)</span>
+      </div>
+
       <div className="p-8 space-y-16">
         {PROJECTS.map(project => {
           const projectColor = generateNeonColor(project.name);
@@ -203,6 +210,10 @@ function App() {
                           phase={phase.id}
                           status={cellData ? cellData.status : 'empty'}
                           completion={cellData ? cellData.completion : 0}
+                          scenariosTotal={cellData ? cellData.scenarios_total : 0}
+                          scenariosPassed={cellData ? cellData.scenarios_passed : 0}
+                          stepsTotal={cellData ? cellData.steps_total : 0}
+                          stepsPassed={cellData ? cellData.steps_passed : 0}
                           color={projectColor}
                           onClick={() => handleCellClick(cellData, projectColor)}
                         />
