@@ -36,10 +36,42 @@ function App() {
   useEffect(() => {
     // Simulate fetching data with completion percentages
     setMatrixState([
-      { project: 'demicracy', row: 'identity', phase: 0, status: 'pass', completion: 100 },
-      { project: 'demicracy', row: 'identity', phase: 1, status: 'pending', completion: 40 },
-      { project: 'demicracy', row: 'governance', phase: 1, status: 'fail', completion: 10 },
-      { project: 'autoboros', row: 'agents', phase: 0, status: 'pending', completion: 25 },
+      {
+        project: 'demicracy',
+        row: 'identity',
+        phase: 0,
+        status: 'pass',
+        completion: 100,
+        updateText: 'Core identity module verified',
+        link: 'https://github.com/Cervator/demicracy'
+      },
+      {
+        project: 'demicracy',
+        row: 'identity',
+        phase: 1,
+        status: 'pending',
+        completion: 40,
+        updateText: 'OAuth integration in progress',
+        link: 'https://github.com/Cervator/demicracy/issues'
+      },
+      {
+        project: 'demicracy',
+        row: 'governance',
+        phase: 1,
+        status: 'fail',
+        completion: 10,
+        updateText: 'Voting mechanism failing tests',
+        link: 'https://github.com/Cervator/demicracy/actions'
+      },
+      {
+        project: 'autoboros',
+        row: 'agents',
+        phase: 0,
+        status: 'pending',
+        completion: 25,
+        updateText: 'Agent framework scaffolding',
+        link: 'https://github.com/Cervator/autoboros'
+      },
     ]);
   }, []);
 
@@ -101,6 +133,8 @@ function App() {
                           status={cellData ? cellData.status : 'empty'}
                           completion={cellData ? cellData.completion : 0}
                           color={projectColor}
+                          updateText={cellData?.updateText}
+                          link={cellData?.link}
                         />
                       );
                     })}

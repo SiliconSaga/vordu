@@ -8,17 +8,22 @@ interface MatrixCellProps {
     completion?: number; // 0-100
     color?: string;
     label?: string;
+    link?: string;
+    updateText?: string;
 }
 
-export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label }: MatrixCellProps) => {
+export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, link = '#', updateText }: MatrixCellProps) => {
     // Calculate opacity: 10% baseline + up to 90% based on completion
     const opacity = 0.1 + (Math.min(100, Math.max(0, completion)) / 100) * 0.9;
 
     return (
-        <motion.div
+        <motion.a
+            href={link}
+            target="_blank"
+            rel="noopener noreferrer"
             whileHover={{ scale: 1.05, opacity: 1 }}
-            className="relative w-full h-24 rounded-lg border flex items-center justify-center p-2 cursor-pointer overflow-hidden group"
-            style={{ borderColor: color }}
+            className="relative w-full h-24 rounded-lg border flex flex-col items-center justify-center px-1 py-2 cursor-pointer overflow-hidden group text-decoration-none"
+            style={{ borderColor: color, color: color }}
         >
             {/* Background Layer with Opacity */}
             <div
@@ -30,13 +35,29 @@ export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label }:
                 }}
             />
 
-            {/* Content Layer (keeps text opaque-ish) */}
-            <div className="relative z-10">
-                {label && <span className="text-xs font-bold text-black uppercase tracking-wider">{label}</span>}
-                {status === 'empty' && completion === 0 && (
-                    <div className="w-2 h-2 rounded-full bg-gray-600 opacity-50" />
+            {/* Content Layer */}
+            <div className="relative z-10 flex flex-col items-center text-center gap-0.5 w-full">
+                {label && <span className="text-[10px] font-bold uppercase tracking-wider opacity-80" style={{ color }}>{label}</span>}
+
+                {/* Percentage (only if started) */}
+                {completion > 0 && (
+                    <span className="text-3xl font-black drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
+                        {completion}%
+                    </span>
+                )}
+
+                {/* Update Text */}
+                {updateText && (
+                    <span className="text-xs font-bold leading-tight w-full truncate px-1">
+                        {updateText}
+                    </span>
+                )}
+
+                {/* Empty State Indicator */}
+                {status === 'empty' && completion === 0 && !updateText && (
+                    <div className="w-2 h-2 rounded-full opacity-50" style={{ backgroundColor: color }} />
                 )}
             </div>
-        </motion.div>
+        </motion.a>
     );
 };
