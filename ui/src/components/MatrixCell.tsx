@@ -8,21 +8,18 @@ interface MatrixCellProps {
     completion?: number; // 0-100
     color?: string;
     label?: string;
-    link?: string;
-    updateText?: string;
+    onClick?: () => void;
 }
 
-export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, link = '#', updateText }: MatrixCellProps) => {
+export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, onClick }: MatrixCellProps) => {
     // Calculate opacity: 10% baseline + up to 90% based on completion
     const opacity = 0.1 + (Math.min(100, Math.max(0, completion)) / 100) * 0.9;
 
     return (
-        <motion.a
-            href={link}
-            target="_blank"
-            rel="noopener noreferrer"
+        <motion.div
+            onClick={onClick}
             whileHover={{ scale: 1.05, opacity: 1 }}
-            className="relative w-full h-24 rounded-lg border flex flex-col items-center justify-center px-1 py-2 cursor-pointer overflow-hidden group text-decoration-none"
+            className="relative w-full h-24 rounded-lg border flex flex-col items-center justify-center px-1 py-2 cursor-pointer overflow-hidden group"
             style={{ borderColor: color, color: color }}
         >
             {/* Background Layer with Opacity */}
@@ -46,18 +43,11 @@ export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label, l
                     </span>
                 )}
 
-                {/* Update Text */}
-                {updateText && (
-                    <span className="text-xs font-bold leading-tight w-full truncate px-1">
-                        {updateText}
-                    </span>
-                )}
-
                 {/* Empty State Indicator */}
-                {status === 'empty' && completion === 0 && !updateText && (
+                {status === 'empty' && completion === 0 && (
                     <div className="w-2 h-2 rounded-full opacity-50" style={{ backgroundColor: color }} />
                 )}
             </div>
-        </motion.a>
+        </motion.div>
     );
 };

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MatrixCell } from './components/MatrixCell';
 import { TopBar } from './components/TopBar';
+import { Overlay } from './components/Overlay';
 import { generateNeonColor } from './utils/colors';
 import './App.css';
 
@@ -32,6 +33,7 @@ const PROJECTS = [
 
 function App() {
   const [matrixState, setMatrixState] = useState<any[]>([]);
+  const [selectedCell, setSelectedCell] = useState<any>(null);
 
   useEffect(() => {
     // Simulate fetching data with completion percentages
@@ -79,9 +81,22 @@ function App() {
     return matrixState.find(c => c.project === project && c.row === row && c.phase === phase);
   };
 
+  const handleCellClick = (cellData: any, color: string) => {
+    if (cellData) {
+      setSelectedCell({ ...cellData, color });
+    }
+  };
+
   return (
     <div className="min-h-screen bg-dark-bg text-white font-sans">
       <TopBar projectName="Overview" />
+
+      <Overlay
+        isOpen={!!selectedCell}
+        onClose={() => setSelectedCell(null)}
+        data={selectedCell}
+        color={selectedCell?.color || '#fff'}
+      />
 
       <div className="p-8 space-y-16">
         {PROJECTS.map(project => {
@@ -111,17 +126,27 @@ function App() {
                 {/* Header Row */}
                 <div className="text-right pr-4 pt-2 text-gray-500 font-mono text-sm">CAPABILITY</div>
                 {PHASES.map(phase => (
-                  <div key={phase.id} className="text-center text-gray-400 font-bold text-sm uppercase tracking-widest">
+                  <a
+                    key={phase.id}
+                    href="#"
+                    className="text-center text-gray-400 font-bold text-sm uppercase tracking-widest hover:text-white transition-colors"
+                    title="View Quarterly Planning Blog"
+                  >
                     {phase.label}
-                  </div>
+                  </a>
                 ))}
 
                 {/* Data Rows */}
                 {project.rows.map(row => (
                   <>
-                    <div key={row.id} className="text-right pr-4 py-8 font-medium text-gray-300 flex items-center justify-end">
+                    <a
+                      key={row.id}
+                      href="#"
+                      className="text-right pr-4 py-8 font-medium text-gray-300 flex items-center justify-end hover:text-white transition-colors"
+                      title="View Subject Area Definition"
+                    >
                       {row.label}
-                    </div>
+                    </a>
                     {PHASES.map(phase => {
                       const cellData = getCellData(project.id, row.id, phase.id);
                       return (
@@ -133,8 +158,7 @@ function App() {
                           status={cellData ? cellData.status : 'empty'}
                           completion={cellData ? cellData.completion : 0}
                           color={projectColor}
-                          updateText={cellData?.updateText}
-                          link={cellData?.link}
+                          onClick={() => handleCellClick(cellData, projectColor)}
                         />
                       );
                     })}
