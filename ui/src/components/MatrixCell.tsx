@@ -5,30 +5,38 @@ interface MatrixCellProps {
     row: string;
     phase: number;
     status: 'pass' | 'fail' | 'pending' | 'empty';
+    completion?: number; // 0-100
+    color?: string;
     label?: string;
 }
 
-export const MatrixCell = ({ status, label }: MatrixCellProps) => {
-    const getStatusColor = () => {
-        switch (status) {
-            case 'pass': return 'bg-neon-green shadow-neon border-neon-green';
-            case 'fail': return 'bg-red-500 shadow-red-500/50 border-red-500';
-            case 'pending': return 'bg-yellow-500 shadow-yellow-500/50 border-yellow-500';
-            default: return 'bg-panel-bg border-gray-700 opacity-30';
-        }
-    };
+export const MatrixCell = ({ status, completion = 0, color = '#39ff14', label }: MatrixCellProps) => {
+    // Calculate opacity: 10% baseline + up to 90% based on completion
+    const opacity = 0.1 + (Math.min(100, Math.max(0, completion)) / 100) * 0.9;
 
     return (
         <motion.div
-            whileHover={{ scale: 1.05 }}
-            className={`
-        w-full h-24 rounded-lg border-2 flex items-center justify-center p-2
-        transition-colors duration-300 cursor-pointer
-        ${getStatusColor()}
-      `}
+            whileHover={{ scale: 1.05, opacity: 1 }}
+            className="relative w-full h-24 rounded-lg border flex items-center justify-center p-2 cursor-pointer overflow-hidden group"
+            style={{ borderColor: color }}
         >
-            {label && <span className="text-xs font-bold text-black uppercase tracking-wider">{label}</span>}
-            {status === 'empty' && <div className="w-2 h-2 rounded-full bg-gray-600" />}
+            {/* Background Layer with Opacity */}
+            <div
+                className="absolute inset-0 transition-all duration-300"
+                style={{
+                    backgroundColor: 'transparent',
+                    opacity: opacity,
+                    boxShadow: `inset 0 0 50px ${color}`, // Strong inner glow fading to center
+                }}
+            />
+
+            {/* Content Layer (keeps text opaque-ish) */}
+            <div className="relative z-10">
+                {label && <span className="text-xs font-bold text-black uppercase tracking-wider">{label}</span>}
+                {status === 'empty' && completion === 0 && (
+                    <div className="w-2 h-2 rounded-full bg-gray-600 opacity-50" />
+                )}
+            </div>
         </motion.div>
     );
 };
