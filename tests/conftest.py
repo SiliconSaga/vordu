@@ -19,8 +19,8 @@ import os
 
 @pytest.fixture
 def api_base_url():
-    return os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
+    return os.getenv("API_BASE_URL", "http://127.0.0.1:8000") # Avoid IPv6 issues
 
 @pytest.fixture
 def ui_base_url():
-    return os.getenv("UI_BASE_URL", "http://127.0.0.1:5173")
+    return os.getenv("UI_BASE_URL", "http://localhost:5173") # Better for local dev

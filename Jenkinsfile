@@ -84,6 +84,7 @@ pipeline {
                                 echo "Continuing despite API failure..."
                             else
                                 # Run tests (generating cucumber.json)
+                                export UI_BASE_URL="http://localhost:8000"
                                 pytest || true
                             fi
                         """

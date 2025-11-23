@@ -116,6 +116,12 @@ async def serve_react_app(full_path: str):
     if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
         raise HTTPException(status_code=404, detail="Not Found")
     
+    # Check if the file exists in the UI build directory (e.g. logo.png, favicon.ico)
+    file_path = os.path.join("ui/dist", full_path)
+    if os.path.exists(file_path) and os.path.isfile(file_path):
+        return FileResponse(file_path)
+    
+    # Fallback to index.html for SPA routing
     if os.path.exists("ui/dist/index.html"):
         return FileResponse("ui/dist/index.html")
     return {"message": "UI not built. Run 'npm run build' in ui/ directory."}
