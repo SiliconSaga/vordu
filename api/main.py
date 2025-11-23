@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
-from models import Base, engine, MatrixCell, get_db
+from .models import Base, engine, MatrixCell, get_db
 from pydantic import BaseModel
 from typing import List, Optional
 
