@@ -57,6 +57,12 @@ pipeline {
                     script {
                         checkout scm
                         sh """
+                            # Build UI so API can serve it
+                            cd ui
+                            npm install
+                            npm run build
+                            cd ..
+
                             # Install dependencies
                             pip install --no-cache-dir -r api/requirements.txt
                             playwright install chromium
