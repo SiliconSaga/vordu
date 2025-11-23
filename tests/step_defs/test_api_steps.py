@@ -23,7 +23,11 @@ def post_cucumber_report(api_base_url):
             "row_id": "api-test",
             "phase_id": 0,
             "status": "pass",
-            "completion": 100
+            "completion": 100,
+            "scenarios_total": 5,
+            "scenarios_passed": 5,
+            "steps_total": 20,
+            "steps_passed": 20
         }
     ]
     try:

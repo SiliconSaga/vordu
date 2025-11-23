@@ -88,7 +88,7 @@ function App() {
 
       try {
         // 2. Fetch Real Data from API
-        const response = await fetch('http://localhost:8000/matrix');
+        const response = await fetch('/matrix');
         if (response.ok) {
           const apiData = await response.json();
 

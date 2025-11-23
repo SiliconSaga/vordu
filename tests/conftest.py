@@ -15,10 +15,12 @@ def page(browser_context):
     yield page
     page.close()
 
+import os
+
 @pytest.fixture
 def api_base_url():
-    return "http://localhost:8000"
+    return os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
 
 @pytest.fixture
 def ui_base_url():
-    return "http://localhost:5173"
+    return os.getenv("UI_BASE_URL", "http://127.0.0.1:5173")

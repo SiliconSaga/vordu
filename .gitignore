@@ -31,3 +31,5 @@ htmlcov/
 
 # Temp
 api/vordu.db
+vordu.db
+cucumber.json

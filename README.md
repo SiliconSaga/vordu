@@ -10,3 +10,8 @@
 
 * **Runtime**: Node.js
 * **Purpose**: Dynamic Roadmap Rendering
+
+### Validate
+
+* Main site should be available at https://vordu.siliconsaga.org
+* Look for API health check at https://vordu.siliconsaga.org/health
