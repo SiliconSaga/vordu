@@ -49,36 +49,34 @@ pipeline {
         }
         
         stage('Test') {
+            agent {
+                label 'python-ai'
+            }
             steps {
-                script {
-                    // Run tests inside a Python container (using the base image we just built would be ideal, 
-                    // but for simplicity using the agent's python environment or a standard python container)
-                    // We'll use the 'python-ai' agent or similar if available, or just install in the current workspace
-                    // assuming the agent has python. The 'docker' agent usually has python.
-                    
-                    sh """
-                        # Install dependencies
-                        pip install --no-cache-dir -r api/requirements.txt
-                        
-                        # Start API in background for integration tests
-                        # We need to set PYTHONPATH so it finds the 'api' module
-                        export PYTHONPATH=\$PYTHONPATH:.
-                        nohup uvicorn api.main:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
-                        
-                        # Wait for API to start
-                        sleep 5
-                        
-                        # Run tests (generating cucumber.json)
-                        # We ignore exit code so pipeline continues to ingestion/deploy even if some tests fail?
-                        # Or we want it to fail? Usually fail.
-                        # But for now, let's allow it to proceed so we can see the report.
-                        pytest || true
-                    """
+                container('builder') {
+                    script {
+                        checkout scm
+                        sh """
+                            # Install dependencies
+                            pip install --no-cache-dir -r api/requirements.txt
+                            
+                            # Start API in background for integration tests
+                            export PYTHONPATH=\$PYTHONPATH:.
+                            nohup uvicorn api.main:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
+                            
+                            # Wait for API to start
+                            sleep 5
+                            
+                            # Run tests (generating cucumber.json)
+                            pytest || true
+                        """
+                    }
                 }
             }
             post {
                 always {
                     archiveArtifacts artifacts: 'cucumber.json', allowEmptyArchive: true
+                    stash includes: 'cucumber.json', name: 'test-results', allowEmpty: true
                 }
             }
         }
@@ -138,18 +136,24 @@ pipeline {
         }
 
         stage('Ingest BDD') {
+            agent {
+                label 'python-ai'
+            }
             steps {
-                script {
-                    // Ingest the test results into the deployed API
-                    // Using internal K8s service DNS
-                    sh """
-                        # Install requests if not present (should be from Test stage)
-                        pip install requests
+                container('builder') {
+                    script {
+                        checkout scm
+                        unstash 'test-results'
                         
-                        # Run ingestion script
-                        # Pointing to the internal service
-                        python scripts/ingest_cucumber.py cucumber.json http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local
-                    """
+                        // Ingest the test results into the deployed API
+                        sh """
+                            # Install requests if not present
+                            pip install requests
+                            
+                            # Run ingestion script
+                            python scripts/ingest_cucumber.py cucumber.json http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local
+                        """
+                    }
                 }
             }
         }
