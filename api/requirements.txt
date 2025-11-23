@@ -6,4 +6,3 @@ playwright
 requests
 sqlalchemy
 pydantic
-pytest-cucumberjson
