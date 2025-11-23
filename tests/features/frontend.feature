@@ -3,6 +3,7 @@ Feature: Vörðu Frontend
     I want to view the project matrix and details
     So that I can understand the status of the ecosystem
 
+    @vordu:project=vordu @vordu:row=frontend @vordu:phase=0
     Scenario: User views the Project Matrix
         Given the Vörðu UI is running
         When I visit the home page

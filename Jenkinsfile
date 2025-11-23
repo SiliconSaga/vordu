@@ -170,13 +170,17 @@ pipeline {
                         unstash 'test-results'
                         
                         // Ingest the test results into the deployed API
-                        sh """
-                            # Install requests if not present
-                            pip install requests
-                            
-                            # Run ingestion script
-                            python scripts/ingest_cucumber.py cucumber.json --api http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local
-                        """
+                        withCredentials([string(credentialsId: 'vordu-api-key', variable: 'VORDU_API_KEY')]) {
+                            sh """
+                                # Install requests if not present
+                                pip install requests
+                                
+                                # Run ingestion script
+                                python scripts/ingest_cucumber.py cucumber.json \
+                                    --api http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local \
+                                    --api-key \${VORDU_API_KEY}
+                            """
+                        }
                     }
                 }
             }

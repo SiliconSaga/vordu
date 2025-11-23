@@ -56,8 +56,23 @@ class MatrixResponse(BaseModel):
 def health_check():
     return {"message": "Vörðu API is running. The Cairn stands tall."}
 
+from fastapi.security import APIKeyHeader
+from fastapi import Security
+
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    expected_key = os.getenv("VORDU_API_KEY")
+    if not expected_key:
+        # If no key configured in env, allow open access (dev mode). Otherwise expect key present in environment.
+        return None
+        
+    if api_key_header == expected_key:
+        return api_key_header
+    raise HTTPException(status_code=403, detail="Could not validate credentials")
+
 @app.post("/ingest")
-def ingest_status(items: List[IngestItem], db: Session = Depends(get_db)):
+def ingest_status(items: List[IngestItem], db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     # Bulk upsert logic
     updated_count = 0
     for item in items:

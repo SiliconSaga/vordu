@@ -28,6 +28,11 @@ spec:
         env:
         - name: DATABASE_URL
           value: "sqlite:////data/vordu.db"
+        - name: VORDU_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: vordu-secrets
+              key: api-key
         volumeMounts:
         - name: vordu-data
           mountPath: /data

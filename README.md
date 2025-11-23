@@ -15,3 +15,10 @@
 
 * Main site should be available at https://vordu.siliconsaga.org
 * Look for API health check at https://vordu.siliconsaga.org/health
+
+### Secure
+
+The API is secured with a simple secret key that should be stored as a Jenkins credential then passed to the deployment as `VORDU_API_KEY`
+
+* Jenkins Credential: Create a "Secret Text" credential in Jenkins named `vordu-api-key` with a strong random string.
+* `kubectl create secret generic vordu-secrets --from-literal=api-key=YOUR_SECRET_STRING -n vordu`

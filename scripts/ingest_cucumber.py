@@ -83,13 +83,17 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
 
     return ingest_items
 
-def ingest_data(api_url: str, items: List[Dict]):
+def ingest_data(api_url: str, items: List[Dict], api_key: str = None):
     if not items:
         print("No Vörðu tagged scenarios found.")
         return
 
+    headers = {}
+    if api_key:
+        headers["X-API-Key"] = api_key
+
     try:
-        response = requests.post(f"{api_url}/ingest", json=items)
+        response = requests.post(f"{api_url}/ingest", json=items, headers=headers)
         response.raise_for_status()
         print(f"Successfully ingested {len(items)} items. Response: {response.json()}")
     except requests.exceptions.RequestException as e:
@@ -100,8 +104,9 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest Cucumber JSON to Vörðu")
     parser.add_argument("file", help="Path to cucumber.json report")
     parser.add_argument("--api", default="http://localhost:8000", help="Vörðu API URL")
+    parser.add_argument("--api-key", help="API Key for authentication")
     
     args = parser.parse_args()
     
     items = parse_cucumber_json(args.file)
-    ingest_data(args.api, items)
+    ingest_data(args.api, items, args.api_key)
