@@ -16,8 +16,8 @@ app = FastAPI(title="Vörðu API", description="The Living Roadmap Aggregator")
 
 # Mount static files (after building UI)
 # Ensure the directory exists to avoid errors during dev if not built
-if os.path.exists("../ui/dist"):
-    app.mount("/assets", StaticFiles(directory="../ui/dist/assets"), name="assets")
+if os.path.exists("ui/dist"):
+    app.mount("/assets", StaticFiles(directory="ui/dist/assets"), name="assets")
 
 app.add_middleware(
     CORSMiddleware,
@@ -50,8 +50,10 @@ class MatrixResponse(BaseModel):
     steps_total: int
     steps_passed: int
 
-@app.get("/")
-def read_root():
+
+
+@app.get("/health")
+def health_check():
     return {"message": "Vörðu API is running. The Cairn stands tall."}
 
 @app.post("/ingest")
@@ -114,6 +116,6 @@ async def serve_react_app(full_path: str):
     if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
         raise HTTPException(status_code=404, detail="Not Found")
     
-    if os.path.exists("../ui/dist/index.html"):
-        return FileResponse("../ui/dist/index.html")
+    if os.path.exists("ui/dist/index.html"):
+        return FileResponse("ui/dist/index.html")
     return {"message": "UI not built. Run 'npm run build' in ui/ directory."}
