@@ -64,8 +64,23 @@ pipeline {
                             export PYTHONPATH=\$PYTHONPATH:.
                             nohup uvicorn api.main:app --host 0.0.0.0 --port 8000 > /tmp/api.log 2>&1 &
                             
-                            # Wait for API to start
-                            sleep 5
+                            # Wait for API to start (health check loop)
+                            echo "Waiting for API to start..."
+                            for i in {1..30}; do
+                                if curl -s http://localhost:8000/docs > /dev/null; then
+                                    echo "API is up!"
+                                    break
+                                fi
+                                echo "Waiting for API... (\$i/30)"
+                                sleep 1
+                            done
+                            
+                            # Check if API actually started
+                            if ! curl -s http://localhost:8000/docs > /dev/null; then
+                                echo "API failed to start. Logs:"
+                                cat /tmp/api.log
+                                exit 1
+                            fi
                             
                             # Run tests (generating cucumber.json)
                             pytest || true
