@@ -5,15 +5,23 @@ from pydantic import BaseModel
 from typing import List, Optional
 
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+import os
 
 # Create tables
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Vörðu API", description="The Living Roadmap Aggregator")
 
+# Mount static files (after building UI)
+# Ensure the directory exists to avoid errors during dev if not built
+if os.path.exists("../ui/dist"):
+    app.mount("/assets", StaticFiles(directory="../ui/dist/assets"), name="assets")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=["http://localhost:5173", "https://vordu.siliconsaga.org"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -98,3 +106,14 @@ def get_matrix(db: Session = Depends(get_db)):
             steps_passed=c.steps_passed
         ) for c in cells
     ]
+
+# Serve React App (SPA)
+@app.get("/{full_path:path}")
+async def serve_react_app(full_path: str):
+    # Allow API routes to pass through if they weren't caught above
+    if full_path.startswith("api") or full_path.startswith("docs") or full_path.startswith("openapi.json"):
+        raise HTTPException(status_code=404, detail="Not Found")
+    
+    if os.path.exists("../ui/dist/index.html"):
+        return FileResponse("../ui/dist/index.html")
+    return {"message": "UI not built. Run 'npm run build' in ui/ directory."}

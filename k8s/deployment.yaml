@@ -1,0 +1,35 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vordu
+  labels:
+    app: vordu
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: vordu
+  template:
+    metadata:
+      labels:
+        app: vordu
+    spec:
+      containers:
+      - name: vordu
+        image: us-east1-docker.pkg.dev/teralivekubernetes/vordu/vordu:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+        env:
+        - name: DATABASE_URL
+          value: "sqlite:////data/vordu.db"
+        volumeMounts:
+        - name: vordu-data
+          mountPath: /data
+      volumes:
+      - name: vordu-data
+        persistentVolumeClaim:
+          claimName: vordu-pvc

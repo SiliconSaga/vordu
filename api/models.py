@@ -2,7 +2,11 @@ from sqlalchemy import create_engine, Column, Integer, String, Enum
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
-SQLALCHEMY_DATABASE_URL = "sqlite:///./vordu.db"
+import os
+
+# Allow overriding DB URL via env var (e.g. for K8s persistence)
+# Default to local file if not set
+SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./vordu.db")
 
 engine = create_engine(
     SQLALCHEMY_DATABASE_URL, connect_args={"check_same_thread": False}

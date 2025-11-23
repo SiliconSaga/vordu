@@ -1,0 +1,24 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: vordu-ingress
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    kubernetes.io/tls-acme: "true"
+spec:
+  ingressClassName: "nginx"
+  rules:
+  - host: vordu.siliconsaga.org
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: vordu-service
+            port:
+              number: 80
+  tls:
+  - hosts:
+    - vordu.siliconsaga.org
+    secretName: vordu-tls-secret
