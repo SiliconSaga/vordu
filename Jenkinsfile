@@ -59,6 +59,7 @@ pipeline {
                         sh """
                             # Install dependencies
                             pip install --no-cache-dir -r api/requirements.txt
+                            playwright install chromium
                             
                             # Start API in background for integration tests
                             export PYTHONPATH=\$PYTHONPATH:.
@@ -167,7 +168,7 @@ pipeline {
                             pip install requests
                             
                             # Run ingestion script
-                            python scripts/ingest_cucumber.py cucumber.json http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local
+                            python scripts/ingest_cucumber.py cucumber.json --api http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local
                         """
                     }
                 }
