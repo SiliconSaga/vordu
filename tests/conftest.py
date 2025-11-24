@@ -24,16 +24,26 @@ def api_base_url():
 def ui_base_url():
     return os.getenv("UI_BASE_URL", "http://localhost:5173") # Better for local dev
 
-def pytest_configure(config):
-    """Register dynamic markers from feature files to avoid warnings."""
-    # Common BDD tags used in Vordu
-    markers = [
-        "vordu",
-        "vordu:phase=0",
-        "vordu:project=vordu",
-        "vordu:row=api",
-        "vordu:row=database",
-        "vordu:row=frontend",
-    ]
-    for marker in markers:
-        config.addinivalue_line("markers", marker)
+def pytest_bdd_apply_tag(tag, function):
+    """
+    Custom tag parsing for Vordu BDD tags.
+    Converts 'vordu:key=value' into @pytest.mark.vordu(key=value).
+    """
+    if tag.startswith("vordu:"):
+        try:
+            # Parse the tag: "vordu:row=api" -> key="row", value="api"
+            parts = tag.split(":", 1)[1]
+            if "=" in parts:
+                key, value = parts.split("=", 1)
+                # Apply marker with kwargs: @pytest.mark.vordu(row="api")
+                marker = pytest.mark.vordu(**{key: value})
+                marker(function)
+            else:
+                # Handle bare "vordu" tag if needed, or ignore
+                pass
+            
+            return True
+        except ValueError:
+            pass
+            
+    return None
