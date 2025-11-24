@@ -62,7 +62,9 @@ pipeline {
                             
                             # Run Ruff (Python Linting)
                             # Output JUnit format for Jenkins to parse
-                            ruff check . --output-format=junit --output-file=ruff-report.xml || true
+                            # Run Ruff (Python Linting)
+                            # Output Pylint format for Jenkins to parse (avoids junit step conflict)
+                            ruff check . --output-format=pylint --output-file=ruff-report.txt || true
                         """
                         
                         // Node Linting
@@ -72,7 +74,7 @@ pipeline {
                             # Run ESLint (assuming script 'lint' exists, otherwise just basic check)
                             # If 'lint' script doesn't exist in package.json, this might fail. 
                             # Let's assume standard Vite template has it.
-                            npm run lint -- --format junit -o eslint-report.xml || true
+                            npm run lint -- --format json -o eslint-report.json || true
                         """
                     }
                 }
@@ -130,7 +132,7 @@ pipeline {
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'cucumber.json, report.xml, ruff-report.xml, ui/eslint-report.xml', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'cucumber.json, report.xml, ruff-report.txt, ui/eslint-report.json', allowEmptyArchive: true
                     stash includes: 'cucumber.json', name: 'test-results', allowEmpty: true
                     
                     // Publish Test Results
@@ -140,10 +142,13 @@ pipeline {
                     recordIssues(
                         enabledForFailure: true, 
                         tools: [
-                            junit(pattern: 'ruff-report.xml', id: 'ruff', name: 'Ruff'),
-                            junit(pattern: 'ui/eslint-report.xml', id: 'eslint', name: 'ESLint')
+                            pyLint(pattern: 'ruff-report.txt', id: 'ruff', name: 'Ruff'),
+                            esLint(pattern: 'ui/eslint-report.json', id: 'eslint', name: 'ESLint')
                         ]
                     )
+                    
+                    // Publish BDD Reports
+                    cucumberReports jsonReportDirectory: '.', fileIncludePattern: 'cucumber.json'
                 }
             }
         }

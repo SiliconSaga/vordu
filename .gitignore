@@ -33,3 +33,5 @@ htmlcov/
 api/vordu.db
 vordu.db
 cucumber.json
+ruff-report.txt
+ui/eslint-report.json
