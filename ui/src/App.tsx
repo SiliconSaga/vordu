@@ -40,14 +40,16 @@ const PROJECTS = [
   }
 ];
 
+import type { MatrixCellData, OverlayData } from './types';
+
 function App() {
-  const [matrixState, setMatrixState] = useState<any[]>([]);
-  const [selectedCell, setSelectedCell] = useState<any>(null);
+  const [matrixState, setMatrixState] = useState<MatrixCellData[]>([]);
+  const [selectedCell, setSelectedCell] = useState<OverlayData | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       // 1. Initial Mock Data (Demicracy & Autoboros)
-      const initialData = [
+      const initialData: MatrixCellData[] = [
         {
           project: 'demicracy',
           row: 'identity',
@@ -95,7 +97,7 @@ function App() {
           // 3. Merge Data (API overrides mock if matches, otherwise appends)
           const mergedData = [...initialData];
 
-          apiData.forEach((apiItem: any) => {
+          apiData.forEach((apiItem: MatrixCellData) => {
             const existingIndex = mergedData.findIndex(
               item => item.project === apiItem.project &&
                 item.row === apiItem.row &&
@@ -127,7 +129,7 @@ function App() {
     return matrixState.find(c => c.project === project && c.row === row && c.phase === phase);
   };
 
-  const handleCellClick = (cellData: any, color: string) => {
+  const handleCellClick = (cellData: MatrixCellData | undefined, color: string) => {
     if (cellData) {
       setSelectedCell({ ...cellData, color });
     }

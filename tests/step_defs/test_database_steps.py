@@ -1,4 +1,4 @@
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import scenario, given, when, then
 
 @scenario('../features/database.feature', 'Persist Project Structure')
 def test_persist_project_structure():

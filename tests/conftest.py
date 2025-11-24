@@ -1,3 +1,4 @@
+import os
 import pytest
 from playwright.sync_api import sync_playwright
 
@@ -14,8 +15,6 @@ def page(browser_context):
     page = browser_context.new_page()
     yield page
     page.close()
-
-import os
 
 @pytest.fixture
 def api_base_url():

@@ -1,6 +1,6 @@
 import pytest
 import requests
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import scenario, given, when, then
 
 @scenario('../features/api.feature', 'Ingest Cucumber JSON')
 def test_ingest_cucumber_json():

@@ -1,4 +1,4 @@
-from pytest_bdd import scenario, given, when, then, parsers
+from pytest_bdd import scenario, given, when, then
 from playwright.sync_api import Page, expect
 
 @scenario('../features/frontend.feature', 'User views the Project Matrix')

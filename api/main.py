@@ -2,11 +2,14 @@ from fastapi import FastAPI, HTTPException, Depends
 from sqlalchemy.orm import Session
 from .models import Base, engine, MatrixCell, get_db
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
+from fastapi.security import APIKeyHeader
+from fastapi import Security
+
 import os
 
 # Create tables
@@ -55,9 +58,6 @@ class MatrixResponse(BaseModel):
 @app.get("/health")
 def health_check():
     return {"message": "Vörðu API is running. The Cairn stands tall."}
-
-from fastapi.security import APIKeyHeader
-from fastapi import Security
 
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 

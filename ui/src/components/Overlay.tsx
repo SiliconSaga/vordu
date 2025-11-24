@@ -1,9 +1,10 @@
 import { motion, AnimatePresence } from 'framer-motion';
+import { OverlayData } from '../types';
 
 interface OverlayProps {
     isOpen: boolean;
     onClose: () => void;
-    data: any; // We'll refine this type later
+    data: OverlayData | null;
     color: string;
 }
 
