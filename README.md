@@ -11,6 +11,22 @@
 * **Runtime**: Node.js
 * **Purpose**: Dynamic Roadmap Rendering
 
+### Quality Checks
+
+**Python (Ruff)**
+```bash
+# From root in bash perhaps
+ruff check .
+# Via virtual env on Windows:
+api\.venv\Scripts\ruff check .
+```
+
+**Node (ESLint)**
+```bash
+cd ui
+npm run lint
+```
+
 ### Validate
 
 * Main site should be available at https://vordu.siliconsaga.org

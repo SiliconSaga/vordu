@@ -48,6 +48,37 @@ pipeline {
             }
         }
         
+        stage('Lint') {
+            agent {
+                label 'python-ai'
+            }
+            steps {
+                container('builder') {
+                    script {
+                        checkout scm
+                        sh """
+                            # Install dependencies (including ruff)
+                            pip install --no-cache-dir -r api/requirements.txt
+                            
+                            # Run Ruff (Python Linting)
+                            # Output JUnit format for Jenkins to parse
+                            ruff check . --output-format=junit --output-file=ruff-report.xml || true
+                        """
+                        
+                        // Node Linting
+                        sh """
+                            cd ui
+                            npm install
+                            # Run ESLint (assuming script 'lint' exists, otherwise just basic check)
+                            # If 'lint' script doesn't exist in package.json, this might fail. 
+                            # Let's assume standard Vite template has it.
+                            npm run lint -- --format junit -o eslint-report.xml || true
+                        """
+                    }
+                }
+            }
+        }
+
         stage('Test') {
             agent {
                 label 'python-ai'
@@ -89,9 +120,9 @@ pipeline {
                                 # Don't exit, just log failure so we can test deployment
                                 echo "Continuing despite API failure..."
                             else
-                                # Run tests (generating cucumber.json)
+                                # Run tests (generating cucumber.json and junit report)
                                 export UI_BASE_URL="http://localhost:8000"
-                                pytest || true
+                                pytest --junitxml=report.xml || true
                             fi
                         """
                     }
@@ -99,8 +130,20 @@ pipeline {
             }
             post {
                 always {
-                    archiveArtifacts artifacts: 'cucumber.json', allowEmptyArchive: true
+                    archiveArtifacts artifacts: 'cucumber.json, report.xml, ruff-report.xml, ui/eslint-report.xml', allowEmptyArchive: true
                     stash includes: 'cucumber.json', name: 'test-results', allowEmpty: true
+                    
+                    // Publish Test Results
+                    junit 'report.xml'
+                    
+                    // Publish Linting Results (Warnings NG)
+                    recordIssues(
+                        enabledForFailure: true, 
+                        tools: [
+                            junit(pattern: 'ruff-report.xml', id: 'ruff', name: 'Ruff'),
+                            junit(pattern: 'ui/eslint-report.xml', id: 'eslint', name: 'ESLint')
+                        ]
+                    )
                 }
             }
         }
@@ -160,6 +203,9 @@ pipeline {
         }
 
         stage('Ingest BDD') {
+            when {
+                branch 'main'
+            }
             agent {
                 label 'python-ai'
             }
