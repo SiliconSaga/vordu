@@ -11,7 +11,24 @@
 * **Runtime**: Node.js
 * **Purpose**: Dynamic Roadmap Rendering
 
-### Quality Checks
+## Run
+
+How to run locally
+
+### API
+
+```bash
+uvicorn api.main:app --reload
+```
+
+### UI
+
+```bash
+cd ui
+npm run dev
+```
+
+## Quality Checks
 
 **Python (Ruff)**
 ```bash
@@ -27,12 +44,12 @@ cd ui
 npm run lint
 ```
 
-### Validate
+## Validate
 
 * Main site should be available at https://vordu.siliconsaga.org
 * Look for API health check at https://vordu.siliconsaga.org/health
 
-### Secure
+## Secure
 
 The API is secured with a simple secret key that should be stored as a Jenkins credential then passed to the deployment as `VORDU_API_KEY`
 

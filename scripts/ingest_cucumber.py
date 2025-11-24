@@ -26,9 +26,9 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
                 continue
             
             tags = element.get('tags', [])
-            project = get_tag_value(tags, '@vordu:project=')
-            row = get_tag_value(tags, '@vordu:row=')
-            phase = get_tag_value(tags, '@vordu:phase=')
+            project = get_tag_value(tags, 'vordu:project=')
+            row = get_tag_value(tags, 'vordu:row=')
+            phase = get_tag_value(tags, 'vordu:phase=')
 
             if project and row and phase:
                 key = f"{project}::{row}::{phase}"
