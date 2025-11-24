@@ -148,7 +148,7 @@ pipeline {
                     )
                     
                     // Publish BDD Reports
-                    cucumberReports jsonReportDirectory: '.', fileIncludePattern: 'cucumber.json'
+                    cucumber jsonReportDirectory: '.', fileIncludePattern: 'cucumber.json'
                 }
             }
         }
