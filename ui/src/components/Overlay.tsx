@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import { OverlayData } from '../types';
+import type { OverlayData } from '../types';
 
 interface OverlayProps {
     isOpen: boolean;
