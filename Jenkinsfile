@@ -79,6 +79,18 @@ pipeline {
                     }
                 }
             }
+            post {
+                always {
+                    // Publish Linting Results (Warnings NG) - Must run in same stage as generation
+                    recordIssues(
+                        enabledForFailure: true, 
+                        tools: [
+                            pyLint(pattern: 'ruff-report.txt', id: 'ruff', name: 'Ruff'),
+                            esLint(pattern: 'ui/eslint-report.json', id: 'eslint', name: 'ESLint')
+                        ]
+                    )
+                }
+            }
         }
 
         stage('Test') {
@@ -137,18 +149,6 @@ pipeline {
                     
                     // Publish Test Results
                     junit 'report.xml'
-                    
-                    // Publish Linting Results (Warnings NG)
-                    recordIssues(
-                        enabledForFailure: true, 
-                        tools: [
-                            pyLint(pattern: 'ruff-report.txt', id: 'ruff', name: 'Ruff'),
-                            esLint(pattern: 'ui/eslint-report.json', id: 'eslint', name: 'ESLint')
-                        ]
-                    )
-                    
-                    // Publish BDD Reports
-                    cucumber jsonReportDirectory: '.', fileIncludePattern: 'cucumber.json'
                 }
             }
         }

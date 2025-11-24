@@ -23,3 +23,17 @@ def api_base_url():
 @pytest.fixture
 def ui_base_url():
     return os.getenv("UI_BASE_URL", "http://localhost:5173") # Better for local dev
+
+def pytest_configure(config):
+    """Register dynamic markers from feature files to avoid warnings."""
+    # Common BDD tags used in Vordu
+    markers = [
+        "vordu",
+        "vordu:phase=0",
+        "vordu:project=vordu",
+        "vordu:row=api",
+        "vordu:row=database",
+        "vordu:row=frontend",
+    ]
+    for marker in markers:
+        config.addinivalue_line("markers", marker)
