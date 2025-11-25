@@ -15,7 +15,7 @@ def jenkins_configured():
 
 @when('I run a build with Allure enabled')
 def run_allure_build():
-    pytest.fail("Allure plugin not yet installed in Jenkins")
+    assert False, "Allure plugin not yet installed in Jenkins"
 
 @then('the Allure report should be generated')
 def allure_report_generated():
@@ -31,7 +31,7 @@ def ui_deployed():
 
 @when('I run Percy or similar tool')
 def run_percy():
-    pytest.fail("Visual regression tooling not yet selected")
+    assert False, "Visual regression tooling not yet selected"
 
 @then('I should see visual diffs for changed components')
 def see_visual_diffs():

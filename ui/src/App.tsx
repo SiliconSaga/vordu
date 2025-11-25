@@ -204,6 +204,8 @@ function App() {
                     </a>
                     {PHASES.map(phase => {
                       const cellData = getCellData(project.id, row.id, phase.id);
+                      const cellColor = projectColor;
+
                       return (
                         <MatrixCell
                           key={`${project.id}-${row.id}-${phase.id}`}
@@ -216,8 +218,8 @@ function App() {
                           scenariosPassed={cellData ? cellData.scenarios_passed : 0}
                           stepsTotal={cellData ? cellData.steps_total : 0}
                           stepsPassed={cellData ? cellData.steps_passed : 0}
-                          color={projectColor}
-                          onClick={() => handleCellClick(cellData, projectColor)}
+                          color={cellColor}
+                          onClick={() => handleCellClick(cellData, cellColor)}
                         />
                       );
                     })}
