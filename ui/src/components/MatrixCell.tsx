@@ -54,9 +54,10 @@ export const MatrixCell = ({
                 {(completion > 0 || scenariosTotal > 0) && (
                     <>
                         {(scenariosTotal > 0 || stepsTotal > 0) ? (
-                            <div className="flex flex-row items-center justify-center gap-3 text-base font-bold font-mono drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
-                                <span>S:{scenariosPassed}/{scenariosTotal}</span>
-                                <span>T:{stepsPassed}/{stepsTotal}</span>
+                            <div className="flex flex-row items-center justify-center gap-1 text-base font-bold font-mono drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
+                                <span>{scenariosPassed}/{scenariosTotal}</span>
+                                <span>-</span>
+                                <span>{stepsPassed}/{stepsTotal}</span>
                             </div>
                         ) : (
                             <span className="text-3xl font-black drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>

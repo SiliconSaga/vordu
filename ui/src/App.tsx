@@ -149,8 +149,7 @@ function App() {
       {/* Legend */}
       <div className="flex justify-center items-center gap-6 text-xs text-gray-500 font-mono uppercase tracking-wider py-4 border-b border-gray-900/50">
         <span>Color intensity = Completion</span>
-        <span>S = Scenarios (Completed/Total)</span>
-        <span>T = Tests (Passing/Total)</span>
+        <span>Scenarios - Tests (Passing/Total)</span>
       </div>
 
       <div className="p-8 space-y-16">
