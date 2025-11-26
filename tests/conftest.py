@@ -45,5 +45,10 @@ def pytest_bdd_apply_tag(tag, function):
             return True
         except ValueError:
             pass
+    
+    elif tag == "wip":
+        marker = pytest.mark.xfail(reason="Work in Progress (Roadmap Item)")
+        marker(function)
+        return True
             
     return None

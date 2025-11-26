@@ -11,6 +11,7 @@ def test_visual_regression():
 
 @given('the Jenkins pipeline is configured')
 def jenkins_configured():
+    # Assumed true for now so we can test the failure in the next step
     pass
 
 @when('I run a build with Allure enabled')
