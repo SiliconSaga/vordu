@@ -1,94 +1,107 @@
 # Vörðu: The Living Roadmap Architecture
-*Turning "Process as Code" into "Progress as Visuals"*
 
-## 1. The Core Concept
-Instead of manually updating a Markdown table, **Vörðu** listens to your CI/CD pipelines.
+Visualizing progress via BDD tests categorized into a dynamic roadmap.
+
+## The Core Concept
+
+Instead of manually updating a Markdown table, **Vörðu** listens to your CI/CD pipelines and reads your Backstage Catalog.
+
 * **The Spec**: BDD Feature files (`.feature`) define *what* should work.
+* **The Structure**: Backstage Entities (`catalog-info.yaml`) define *where* it fits in the big picture.
 * **The Status**: Automated Test Results (Cucumber JSON) define *what currently* works.
-* **The Map**: Vörðu aggregates this into the Matrix view.
+* **The Map**: Vörðu aggregates this into its Matrix view (and potentially a Backstage Plugin could do similar).
 
-## 2. Data Hierarchy
+## Data Hierarchy
 
-### A. Global Definition (Yggdrasil)
-The "World Tree" defines the **Columns** (Time/Maturity) to ensure everyone speaks the same language.
-* *Location*: `d:/Dev/GitWS/yggdrasil/roadmap-schema.yaml`
-* *Content*:
-    ```yaml
-    phases:
-      0: "Foundation (Norðri)"
-      1: "Utility MVP"
-      2: "Federation"
-      3: "Sovereignty"
-    ```
+Instead of custom YAML or JSON, we start with standard **Backstage Entities** defined in `catalog-info.yaml` and overload with extra config as needed. They are organized in a tree, with the archetype project being Yggdrasil. The top defines 
 
-### B. Project Definition (The Repos)
-Each project defines its **Rows** (Capabilities) and how they map to the Global Phases.
-* *Location*: `[ProjectRoot]/roadmap.yaml`
-* *Example (Demicracy)*:
-    ```yaml
-    project: "Demicracy"
-    rows:
-      - id: "identity"
-        label: "Identity & Trust"
-      - id: "governance"
-        label: "Governance"
-    ```
+### The Scope (Yggdrasil = Domain)
 
-### C. Feature Mapping (The BDD Tags)
-We use **Gherkin Tags** to link a specific feature to a specific cell in the matrix.
-* *Syntax*: `@row:[id]` `@phase:[0-3]`
+The **Domain Entity** defines the high-level roadmap container and the "Global Columns" (Phases - TODO: uncertain if sensible if projects get their own column headers). It also points to which projects we want to include in the roadmap.
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Domain
+metadata:
+  name: yggdrasil
+  annotations:
+    vordu.io/phases: "0:Foundation,1:Utility,2:Federation,3:Sovereignty"
+```
+
+### The Project (Project = System)
+
+The **System Entity** represents a row group (e.g., "Demicracy"). It can define overrides for columns if needed.
+
+* **Entity**: `kind: System` (e.g., `name: mimir`)
+    * Note that a standalone Component should be usable as well, a System should not be required, but may be natural.
+* **Role**: Groups multiple components into a single roadmap view.
+
+### The Capabilities (Module = Component)
+
+Each **Component Entity** represents a specific Row in the matrix.
+
+```yaml
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: kafka
+  system: mimir
+  annotations:
+    vordu.io/row-label: "Event Streaming"
+spec:
+  type: service
+  lifecycle: experimental
+```
+
+### Feature Mapping (BDD Tags)
+
+We link Features to Backstage Components and optionally sub-components.
+
+* *Tag Syntax*: `@component:[name]` `@phase:[0-3]`
 * *Example*:
     ```gherkin
-    @row:identity @phase:1
+    @component:kafka @phase:1
     Feature: Manual Verification
-      As an Admin, I want to verify a neighbor...
     ```
 
-## 3. The Architecture
+## The Architecture
 
 ```mermaid
 graph TD
     Git[Git Push] --> Jenkins[Jenkins CI]
-    Jenkins -->|Run Tests| TestRunner[PyTest / Cucumber]
-    TestRunner -->|Generate Report| JSON[Test Results.json]
-    Jenkins -->|POST /ingest| VorduAPI[Vörðu API]
-    VorduAPI -->|Update Status| DB[(Vörðu DB)]
-    DB -->|Query| VorduUI[Vörðu Frontend]
+    Jenkins -->|POST Status| VorduAPI[Vörðu Backend]
+    Jenkins -->|Run Tests| TestRunner[Cucumber JSON]
+    VorduAPI <--> |Data Store| VorduDB[(Vörðu DB)]
+    VorduAPI --> |Display Data| VorduFrontend
+    VorduAPI -->|Retrieve Status| VorduLogic
+    
+    subgraph Backstage
+      Catalog[Catalog Git] -->|Define Rows| VorduLogic
+      VorduLogic -->|Render Plugin| VorduUI[Roadmap Plugin]
+    end
 ```
 
 ### Components
-1. **Vörðu API (The Aggregator)**
-    * *Tech*: Node.js / Python (FastAPI)
-    * *Endpoint*: `POST /api/ingest`
-    * *Payload*:
-        * Project Name
-        * Git Commit Hash
-        * Parsed BDD Features (Tags + Pass/Fail Status)
-2. **Vörðu DB (The State)**
-    * *Tech*: SQLite / Postgres (or even a JSON file in Git if we want to be "GitOps" pure)
-    * *Schema*: `MatrixCell { Project, Row, Phase, TotalFeatures, PassedFeatures, Status }`
-3. **Vörðu UI (The Visualizer)**
-    * *Tech*: React / Svelte
-    * *Logic*:
-        * Fetch Matrix State.
-        * Render Table.
-        * Cell Color = `Passed / Total`.
-            * 0% = Grey (Planned)
-            * 1-99% = Yellow (In Progress)
-            * 100% = Green (Complete)
 
-## 4. Workflow Example
+1. **Configuration (The Catalog)**: Vörðu reads local Backstage catalog files (not Backstage itself - just two systems using the same source files) to understand entity config to build the "Empty Matrix".
+2. **Status (The DB)**: Jenkins pushes test results to `vordu-db` via the Vörðu API.
+3. **Visualization (Standalone)**: A standalone Vörðu app merges the Catalog (Structure) with the DB (Color).
+4. **Visualization (The Plugin)**: A custom Backstage plugin merges the Catalog (Structure) with the DB (Color).
 
-1. **You write a feature**: `Feature: Fence Permit` tagged `@row:governance @phase:1`.
+## Workflow Example
+
+1. **You write a feature**: `Feature: Kafka Event Streaming` tagged `@component:kafka @phase:1`.
 2. **You push to Git**: The test fails (Red).
-3. **Vörðu updates**: The "Governance / Phase 1" cell turns **Red** (or shows "0/1 Passing").
-4. **Autoboros implements it**: You write the code.
+3. **Vörðu shows update**: The "Event Streaming / Phase 1" cell shows "0/1 Passing".
+4. **Kafka component implemented**: You write the code.
 5. **Jenkins runs**: The test passes (Green).
-6. **Vörðu updates**: The cell turns **Green**.
+6. **Vörðu shows update**: The cell shows "1/1 Passing".
 
-## 5. Implementation Plan (Vörðu)
+## Implementation Plan (Vörðu)
 
-* [ ] **Step 1**: Define the `roadmap-schema.yaml` in Yggdrasil.
-* [ ] **Step 2**: Create the **Vörðu API** (Microservice) to parse Cucumber JSON.
-* [ ] **Step 3**: Create the **Vörðu UI** to render the grid.
+TODO: Update this to consider the current advanced state of the Vordu API already working, need to just redo how the map is defined in Backstage catalog files and updated by separate per-project Jenkinsfiles akin to how the Uplifted Mascot content repos works.
+
+* [ ] **Step 1**: Define the `catalog-info.yaml` for Yggdrasil (Domain).
+* [ ] **Step 2**: Create the **Vörðu API** (Microservice/Plugin) to parse Cucumber JSON.
+* [ ] **Step 3**: Create the **Vörðu UI** (Plugin) to render the grid from Catalog data.
 * [ ] **Step 4**: Wire up a sample Jenkins pipeline (using Uplifted Mascot's agent) to push data.
