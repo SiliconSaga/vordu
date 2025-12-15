@@ -17,6 +17,8 @@ How to run locally
 
 ### API
 
+Likely enable a virtual environment first, PS example: `api\.venv\Scripts\Activate.ps1`
+
 ```bash
 uvicorn api.main:app --reload
 ```

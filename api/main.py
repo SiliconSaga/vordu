@@ -71,6 +71,70 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
         return api_key_header
     raise HTTPException(status_code=403, detail="Could not validate credentials")
 
+class ComponentItem(BaseModel):
+    name: str # The ID
+    label: str
+    system: str
+    parent: str | None = None
+
+class SystemConfig(BaseModel):
+    name: str
+    label: str
+    description: str | None = None
+    domain: str | None = None
+
+class IngestPayload(BaseModel):
+    system: SystemConfig
+    components: List[ComponentItem]
+    # We ignore 'test_results' here, or we can split the endpoint. 
+    # For simplicity, let's allow the mixed payload but only process config here?
+    # Actually, let's keep it separate or modify /ingest?
+    # User asked for "Data coming from catalog files". 
+    # Let's add a NEW endpoint /config/ingest that takes the same payload structure as the script generates.
+
+@app.post("/config/ingest")
+def ingest_config(payload: IngestPayload, db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+    from .models import System, Row
+    
+    # Upsert System
+    system = db.query(System).filter(System.name == payload.system.name).first()
+    if not system:
+        system = System(
+            name=payload.system.name,
+            label=payload.system.label,
+            description=payload.system.description,
+            domain=payload.system.domain
+        )
+        db.add(system)
+    else:
+        system.label = payload.system.label
+        system.description = payload.system.description
+        system.domain = payload.system.domain
+    
+    db.flush() # Get ID if needed, though we use name relation
+    
+    # Upsert Rows (Components)
+    for comp in payload.components:
+        row = db.query(Row).filter(Row.system_name == payload.system.name, Row.key == comp.name).first()
+        if not row:
+            row = Row(
+                system_name=payload.system.name,
+                key=comp.name,
+                label=comp.label,
+                parent_row=comp.parent
+            )
+            db.add(row)
+        else:
+            row.label = comp.label
+            row.parent_row = comp.parent
+            
+    db.commit()
+    return {"status": "config_updated", "system": payload.system.name}
+
+# Combined Ingest Route (Optional, if we want one endpoint to rule them all)
+# But strictly following separation of concerns is better.
+# We'll need to update the script to call this too.
+
 @app.post("/ingest")
 def ingest_status(items: List[IngestItem], db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
     # Bulk upsert logic
@@ -123,6 +187,37 @@ def get_matrix(db: Session = Depends(get_db)):
             steps_passed=c.steps_passed
         ) for c in cells
     ]
+
+class RowConfig(BaseModel):
+    id: str
+    label: str
+    parent: str | None = None
+
+class ProjectResponse(BaseModel):
+    id: str
+    name: str # The Label or Name
+    rows: List[RowConfig]
+
+@app.get("/config", response_model=List[ProjectResponse])
+def get_config(db: Session = Depends(get_db)):
+    from .models import System, Row
+    
+    systems = db.query(System).all()
+    response = []
+    
+    for sys in systems:
+        rows = db.query(Row).filter(Row.system_name == sys.name).all()
+        row_list = [
+            RowConfig(id=r.key, label=r.label, parent=r.parent_row) 
+            for r in rows
+        ]
+        response.append(ProjectResponse(
+            id=sys.name,
+            name=sys.label or sys.name,
+            rows=row_list
+        ))
+        
+    return response
 
 # Serve React App (SPA)
 @app.get("/{full_path:path}")

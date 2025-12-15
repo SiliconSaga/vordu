@@ -4,8 +4,9 @@ import { TopBar } from './components/TopBar';
 import { Overlay } from './components/Overlay';
 import { generateNeonColor } from './utils/colors';
 import './App.css';
+import type { MatrixCellData, OverlayData } from './types';
 
-// Mock Data for now
+// Hardcoded Phases for MVP (Configurable later via Domain entity)
 const PHASES = [
   { id: 0, label: "Foundation (Norðri)" },
   { id: 1, label: "Utility MVP" },
@@ -13,116 +14,46 @@ const PHASES = [
   { id: 3, label: "Sovereignty" },
 ];
 
-const PROJECTS = [
-  {
-    id: 'vordu',
-    name: 'Vörðu',
-    rows: [
-      { id: 'frontend', label: 'Frontend (UI)' },
-      { id: 'api', label: 'API (Backend)' },
-      { id: 'database', label: 'Database' }
-    ]
-  },
-  {
-    id: 'demicracy',
-    name: 'Demicracy',
-    rows: [
-      { id: 'identity', label: 'Identity & Trust' },
-      { id: 'governance', label: 'Governance' },
-    ]
-  },
-  {
-    id: 'autoboros',
-    name: 'Autoboros',
-    rows: [
-      { id: 'agents', label: 'Agent Orchestration' }
-    ]
-  }
-];
+interface RowConfig {
+  id: string;
+  label: string;
+}
 
-import type { MatrixCellData, OverlayData } from './types';
+interface ProjectConfig {
+  id: string;
+  name: string;
+  rows: RowConfig[];
+}
 
 function App() {
   const [matrixState, setMatrixState] = useState<MatrixCellData[]>([]);
+  const [projectConfig, setProjectConfig] = useState<ProjectConfig[]>([]);
   const [selectedCell, setSelectedCell] = useState<OverlayData | null>(null);
 
   useEffect(() => {
-    const fetchData = async () => {
-      // 1. Initial Mock Data (Demicracy & Autoboros)
-      const initialData: MatrixCellData[] = [
-        {
-          project: 'demicracy',
-          row: 'identity',
-          phase: 0,
-          status: 'pass',
-          completion: 100,
-          updateText: 'Core identity module verified',
-          link: 'https://github.com/Cervator/demicracy'
-        },
-        {
-          project: 'demicracy',
-          row: 'identity',
-          phase: 1,
-          status: 'pending',
-          completion: 40,
-          updateText: 'OAuth integration in progress',
-          link: 'https://github.com/Cervator/demicracy/issues'
-        },
-        {
-          project: 'demicracy',
-          row: 'governance',
-          phase: 1,
-          status: 'fail',
-          completion: 10,
-          updateText: 'Voting mechanism failing tests',
-          link: 'https://github.com/Cervator/demicracy/actions'
-        },
-        {
-          project: 'autoboros',
-          row: 'agents',
-          phase: 0,
-          status: 'pending',
-          completion: 25,
-          updateText: 'Agent framework scaffolding',
-          link: 'https://github.com/Cervator/autoboros'
-        },
-      ];
-
+    const fetchConfigAndData = async () => {
       try {
-        // 2. Fetch Real Data from API
-        const response = await fetch('/matrix');
-        if (response.ok) {
-          const apiData = await response.json();
-
-          // 3. Merge Data (API overrides mock if matches, otherwise appends)
-          const mergedData = [...initialData];
-
-          apiData.forEach((apiItem: MatrixCellData) => {
-            const existingIndex = mergedData.findIndex(
-              item => item.project === apiItem.project &&
-                item.row === apiItem.row &&
-                item.phase === apiItem.phase
-            );
-
-            if (existingIndex >= 0) {
-              mergedData[existingIndex] = { ...mergedData[existingIndex], ...apiItem };
-            } else {
-              mergedData.push(apiItem);
-            }
-          });
-
-          setMatrixState(mergedData);
+        // 1. Fetch Project Configuration (Structure)
+        const configResp = await fetch('/config');
+        if (configResp.ok) {
+          const configData = await configResp.json();
+          setProjectConfig(configData);
         } else {
-          console.error("Failed to fetch matrix data");
-          setMatrixState(initialData);
+          console.error("Failed to fetch config");
+        }
+
+        // 2. Fetch Matrix Data (Status)
+        const dataResp = await fetch('/matrix');
+        if (dataResp.ok) {
+          const apiData = await dataResp.json();
+          setMatrixState(apiData);
         }
       } catch (error) {
         console.error("Error connecting to API:", error);
-        setMatrixState(initialData);
       }
     };
 
-    fetchData();
+    fetchConfigAndData();
   }, []);
 
   const getCellData = (project: string, row: string, phase: number) => {
@@ -153,7 +84,14 @@ function App() {
       </div>
 
       <div className="p-8 space-y-16">
-        {PROJECTS.map(project => {
+        {projectConfig.length === 0 && (
+          <div className="text-center text-gray-500 mt-20">
+            <p>Loading Roadmap Configuration...</p>
+            <small>Ensure Vörðu API is running and data has been ingested.</small>
+          </div>
+        )}
+
+        {projectConfig.map(project => {
           const projectColor = generateNeonColor(project.name);
 
           return (
@@ -184,7 +122,6 @@ function App() {
                     key={phase.id}
                     href="#"
                     className="text-center text-gray-400 font-bold text-sm uppercase tracking-widest hover:text-white transition-colors"
-                    title="View Quarterly Planning Blog"
                   >
                     {phase.label}
                   </a>
@@ -197,7 +134,6 @@ function App() {
                       key={row.id}
                       href="#"
                       className="text-right pr-4 py-8 font-medium text-gray-300 flex items-center justify-end hover:text-white transition-colors"
-                      title="View Subject Area Definition"
                     >
                       {row.label}
                     </a>

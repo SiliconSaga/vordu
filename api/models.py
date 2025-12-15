@@ -31,6 +31,24 @@ class MatrixCell(Base):
     steps_total = Column(Integer, default=0)
     steps_passed = Column(Integer, default=0)
 
+class System(Base):
+    __tablename__ = "systems"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    name = Column(String, unique=True, index=True)
+    label = Column(String)
+    description = Column(String)
+    domain = Column(String)
+
+class Row(Base):
+    __tablename__ = "rows"
+    
+    id = Column(Integer, primary_key=True, index=True)
+    system_name = Column(String, index=True) # Foreign key to System.name logical
+    key = Column(String) # The component name/ID
+    label = Column(String)
+    parent_row = Column(String, nullable=True) # For sub-components
+
 def get_db():
     db = SessionLocal()
     try:

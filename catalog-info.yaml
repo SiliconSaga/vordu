@@ -1,0 +1,53 @@
+# Vörðu: The Visualization (System)
+apiVersion: backstage.io/v1alpha1
+kind: System
+metadata:
+  name: vordu
+  description: The dynamic roadmap visualization system.
+  annotations:
+    vordu.io/row-label: "Roadmap Visualization"
+spec:
+  owner: cervator
+  domain: yggdrasil
+
+---
+# Vörðu Frontend
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vordu-web
+  system: vordu
+  annotations:
+    vordu.io/row-label: "Web UI"
+spec:
+  type: website
+  lifecycle: experimental
+  owner: cervator
+
+---
+# Vörðu Backend
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vordu-api
+  system: vordu
+  annotations:
+    vordu.io/row-label: "API & Ingestion"
+spec:
+  type: service
+  lifecycle: experimental
+  owner: cervator
+
+---
+# Vörðu DB
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: vordu-db
+  system: vordu
+  annotations:
+    vordu.io/row-label: "State Persistence"
+spec:
+  type: resource
+  lifecycle: production
+  owner: cervator
