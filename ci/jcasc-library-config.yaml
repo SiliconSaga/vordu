@@ -1,0 +1,15 @@
+unclassified:
+  globalLibraries:
+    libraries:
+      - name: "vordu-lib"
+        defaultVersion: "main" 
+        retriever:
+          modernSCM:
+            scm:
+              git:
+                remote: "file:///var/jenkins_home/workspace/vordu" # Adjust path to where Jenkins sees the repo
+                # If using a git server: "https://your-git-server/cervator/vordu.git"
+                traits:
+                  - "gitBranchDiscovery"
+        allowVersionOverride: true
+        implicit: false
