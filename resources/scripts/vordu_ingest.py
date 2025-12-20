@@ -263,8 +263,16 @@ def parse_cucumber_json(file_path):
             if element['type'] != 'scenario':
                 continue
             
-            # Extract tags
-            tags = [t['name'] for t in element.get('tags', [])]
+            # Extract tags (Handle both dicts `{'name': '@tag'}` and strings `"@tag"`)
+            raw_tags = element.get('tags', [])
+            tags = []
+            for t in raw_tags:
+                if isinstance(t, dict):
+                    tags.append(t.get('name', ''))
+                elif isinstance(t, str):
+                    tags.append(t)
+                else:
+                    tags.append(str(t))
             tag_str = " ".join(tags)
             
             # Determine status & step counts
@@ -329,13 +337,17 @@ def main():
     if args.api_url:
         config_url = f"{args.api_url}/config/ingest"
         print(f"Posting Config to {config_url}...")
-        post_to_api(config_url, args.api_key, config_payload)
+        if not post_to_api(config_url, args.api_key, config_payload):
+            print(f"Failed to post config to {config_url}")
+            sys.exit(1)
         
         # 2. Status Ingestion
         status_payload = build_status_payload(vordu_data, results)
         status_url = f"{args.api_url}/ingest"
         print(f"Posting Status to {status_url}...")
-        post_to_api(status_url, args.api_key, status_payload)
+        if not post_to_api(status_url, args.api_key, status_payload):
+            print(f"Failed to post status to {status_url}")
+            sys.exit(1)
         
     else:
         print("\n[Generated Config Payload]")

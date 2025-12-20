@@ -15,3 +15,13 @@ Feature: Vörðu Frontend
         When I click on a status cell
         Then the BDD Overlay should appear
         And I should see "Verified Features"
+
+    Scenario: User clicks item on the BDD Overlay
+        Given the Vörðu UI is running
+        When I click an item on the BDD Overlay
+        Then the BDD Overlay should expand to show the Scenario Steps
+
+    Scenario: User clicks "create issue" on an item on the BDD Overlay
+        Given the Vörðu UI is running
+        When I click a "create issue" button on an item on the BDD Overlay
+        Then an issue creation request on GitHub should open and prepopulate with the item details
