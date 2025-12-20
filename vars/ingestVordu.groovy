@@ -1,8 +1,8 @@
 def call(Map config = [:]) {
     def catalog = config.catalogPath ?: 'catalog-info.yaml'
     def report = config.reportPath
-    // Default to internal K8s service DNS
-    def apiUrl = config.apiUrl ?: env.VORDU_API_URL ?: 'http://vordu-service.vordu.svc.cluster.local:8000'
+    // Default to internal K8s service DNS (Service port is 80, target is 8000)
+    def apiUrl = config.apiUrl ?: env.VORDU_API_URL ?: 'http://vordu-service.vordu.svc.cluster.local'
     // Prefer environment variable for key if not explicitly passed
     def apiKeyEnv = config.apiKey ? null : 'VORDU_API_KEY'
     def apiKeyVal = config.apiKey

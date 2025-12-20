@@ -176,7 +176,8 @@ def post_to_api(url, api_key, payload):
     req = urllib.request.Request(url, data=data, headers=headers, method='POST')
     
     try:
-        with urllib.request.urlopen(req) as response:
+        # Timeout set to 30 seconds to prevent hanging indefinitely
+        with urllib.request.urlopen(req, timeout=30) as response:
             print(f"[{url}] Success: {response.status}")
             return True
     except urllib.error.HTTPError as e:
@@ -185,6 +186,9 @@ def post_to_api(url, api_key, payload):
         return False
     except urllib.error.URLError as e:
         print(f"[{url}] Connection Error: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"[{url}] Unexpected Error: {e}")
         return False
 
 def parse_cucumber_json(file_path):
