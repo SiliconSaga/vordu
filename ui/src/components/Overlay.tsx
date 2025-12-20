@@ -91,22 +91,22 @@ export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
                                     </div>
 
                                     {/* Failing/Pending Features */}
-                                    {(data.status === 'fail' || data.status === 'pending') && (
+                                    {(data.status === 'failed' || data.status === 'pending') && (
                                         <div className="space-y-4">
                                             <h3 className="text-xl font-mono text-gray-300 border-b border-gray-800 pb-2">
-                                                {data.status === 'fail' ? 'Failing Scenarios' : 'Pending Implementation'}
+                                                {data.status === 'failed' ? 'Failing Scenarios' : 'Pending Implementation'}
                                             </h3>
                                             <div className="bg-black/30 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors">
                                                 <div className="flex items-center gap-3 mb-2">
-                                                    <span className={data.status === 'fail' ? "text-red-500" : "text-yellow-500"}>
-                                                        {data.status === 'fail' ? '✘' : '⚠'}
+                                                    <span className={data.status === 'failed' ? "text-red-500" : "text-yellow-500"}>
+                                                        {data.status === 'failed' ? '✘' : '⚠'}
                                                     </span>
                                                     <span className="font-bold text-white">Feature: Advanced Permissions</span>
                                                 </div>
                                                 <div className="pl-7 text-gray-400 font-mono text-sm space-y-1">
                                                     <p>Scenario: Role-based access control for admins</p>
                                                     <p className="text-red-400 italic">
-                                                        {data.status === 'fail' ? 'Error: Expected 403 but got 200' : 'Not implemented yet'}
+                                                        {data.status === 'failed' ? 'Error: Expected 403 but got 200' : 'Not implemented yet'}
                                                     </p>
                                                 </div>
                                             </div>
