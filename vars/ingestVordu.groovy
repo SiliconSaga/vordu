@@ -1,27 +1,27 @@
 def call(Map config = [:]) {
-    // config.catalogPath (required)
-    // config.reportPath (optional)
-    // config.apiUrl (optional, defaults to VORDU_API_URL env var)
-    // config.apiKey (optional, defaults to VORDU_API_KEY env var)
-
     def catalog = config.catalogPath ?: 'catalog-info.yaml'
     def report = config.reportPath
-    def apiUrl = config.apiUrl ?: env.VORDU_API_URL ?: 'http://vordu-api:8000'
-    def apiKey = config.apiKey ?: env.VORDU_API_KEY
+    // Default to internal K8s service DNS
+    def apiUrl = config.apiUrl ?: env.VORDU_API_URL ?: 'http://vordu-service.vordu.svc.cluster.local:8000'
+    // Prefer environment variable for key if not explicitly passed
+    def apiKeyEnv = config.apiKey ? null : 'VORDU_API_KEY'
+    def apiKeyVal = config.apiKey
 
-    // Ensure we have the ingestion script. 
-    // In a real library, we might use 'libraryResource' to write it to disk.
-    // For now, we assume it's checked out or present.
-    // Let's assume the library writes it to a tmp location.
-    
     writeFile file: 'vordu_ingest.py', text: libraryResource('scripts/vordu_ingest.py')
 
+    // Construct command using environment variable for key if possible to avoid leaking in logs
     def cmd = "python3 vordu_ingest.py ${catalog} --api-url ${apiUrl}"
+    
     if (report) {
         cmd += " --report ${report}"
     }
-    if (apiKey) {
-        cmd += " --api-key ${apiKey}"
+
+    if (apiKeyVal) {
+        // If passed explicitly as string, use it (less secure if not masked)
+        cmd += " --api-key ${apiKeyVal}"
+    } else {
+        // Assume VORDU_API_KEY is in the environment (e.g. from withCredentials)
+        cmd += " --api-key \$VORDU_API_KEY"
     }
 
     sh cmd
