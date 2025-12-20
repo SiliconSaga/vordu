@@ -38,6 +38,7 @@ def extract_vordu_metadata(entities):
         meta = entity.get('metadata', {})
         name = meta.get('name')
         annotations = meta.get('annotations', {})
+        spec = entity.get('spec', {})
         
         # Look for Vörðu annotations
         row_label = annotations.get('vordu.io/row-label')
@@ -47,13 +48,14 @@ def extract_vordu_metadata(entities):
                 "name": name,
                 "label": row_label or name,
                 "description": meta.get('description'),
-                "domain": entity.get('spec', {}).get('domain')
+                "domain": spec.get('domain'),
+                "granularity": annotations.get('vordu.io/granularity', 'component') # Default: component
             }
         elif kind == 'Component':
             component_data = {
                 "name": name,
                 "label": row_label or name,
-                "system": meta.get('system') or entity.get('spec', {}).get('partOf'),
+                "system": meta.get('system') or spec.get('partOf'),
                 "parent": annotations.get('vordu.io/parent-component')
             }
             data['components'].append(component_data)
@@ -86,6 +88,8 @@ def build_config_payload(vordu_data):
 def build_status_payload(vordu_data, test_results):
     """Payload for /ingest (Flattened List[IngestItem])."""
     system_name = vordu_data['system']['name']
+    domain_name = vordu_data['system'].get('domain', 'unknown-domain')
+    granularity = vordu_data['system'].get('granularity', 'component')
     components = vordu_data['components']
     
     # Map mocked results to a quick lookup
@@ -94,7 +98,10 @@ def build_status_payload(vordu_data, test_results):
     
     for result in test_results:
         tag_str = result['tag']
-        status = result['status']
+        status = result.get('status')
+        # Use real step counts if available, else default to mock assumption
+        r_passed = result.get('passed_steps', 5 if status == 'passed' else 0)
+        r_total = result.get('total_steps', 5)
         
         # Parse tags
         comp_name = None
@@ -114,53 +121,98 @@ def build_status_payload(vordu_data, test_results):
             key = (comp_name, phase_id)
             if key not in status_map:
                 status_map[key] = []
-            status_map[key].append(status)
+            status_map[key].append({
+                "status": status,
+                "passed_steps": r_passed,
+                "total_steps": r_total
+            })
+
+    # Grouping Logic
+    groups = {} # Key: (row_id), Value: {phase: [list of component items]}
+    
+    for comp in components:
+        comp_name = comp['name']
+        parent = comp.get('parent')
+        
+        # Determine Target Row ID based on Granularity
+        if granularity == 'domain':
+             target_row = domain_name
+        elif granularity == 'system':
+            target_row = system_name # One row for the whole system
+        elif granularity == 'component':
+            # If subcomponent has a parent, roll up to parent. Else use own name.
+            target_row = parent if parent else comp_name
+        else:
+            # Default or explicit 'subcomponent' -> Own row
+            target_row = comp_name
+            
+        if target_row not in groups:
+            groups[target_row] = {}
+            
+        # Collect data for this component across all phases
+        for phase in range(4):
+            if phase not in groups[target_row]:
+                groups[target_row][phase] = []
+                
+            results_list = status_map.get((comp_name, phase), [])
+            
+            # Calculate granular stats for this specific component/phase
+            passed_scenarios_count = sum(1 for r in results_list if r['status'] == 'passed')
+            total_scenarios_count = len(results_list)
+            
+            passed_steps_count = sum(r['passed_steps'] for r in results_list)
+            total_steps_count = sum(r['total_steps'] for r in results_list)
+            
+            groups[target_row][phase].append({
+                "passed_scenarios": passed_scenarios_count,
+                "total_scenarios": total_scenarios_count,
+                "passed_steps": passed_steps_count,
+                "total_steps": total_steps_count
+            })
 
     ingest_items = []
     
-    # Generate items for each component and each phase (0-3)
-    for comp in components:
-        comp_name = comp['name']
-        row_id = comp_name 
-        
-        for phase in range(4): # Phases 0 to 3
-            statuses = status_map.get((comp_name, phase), [])
+    # Aggregation Logic
+    for row_id, phases in groups.items():
+        for phase, items in phases.items():
+            # items is a list of dicts from children components
+            if not items:
+                continue
+                
+            # Summation
+            total_scenarios = sum(item['total_scenarios'] for item in items)
+            passed_scenarios = sum(item['passed_scenarios'] for item in items)
             
-            if not statuses:
-                # If no tests for this phase, user might want "empty" or "pending" depending on interpretation.
-                # Usually if strict BDD, no tests = grey/empty. 
-                # Let's send "pending" with 0 completion to signify "Not Started" or just skip?
-                # Vörðu UI renders "empty" if no data. Let's skip if no data, OR send explicitly empty.
-                # But to override previous data, we might need to send something?
-                # For now, let's treat no-tag as "empty".
-                continue 
-                
-            if "failed" in statuses:
-                final_status = "fail"
-                completion = 50
-                passed = statuses.count("passed")
-                total = len(statuses)
-            elif any(s == "pending" for s in statuses):
-                final_status = "pending"
-                completion = 25
-                passed = statuses.count("passed")
-                total = len(statuses)
+            total_steps = sum(item['total_steps'] for item in items)
+            passed_steps = sum(item['passed_steps'] for item in items)
+            
+            # Completion Calculation
+            if total_steps > 0:
+                completion = int((passed_steps / total_steps) * 100)
             else:
+                # If no tests found, check if explicitly empty or pending?
+                # If we have items but 0 tests, it means 0% completion.
+                completion = 0
+            
+            # Status Determination
+            if completion == 100:
                 final_status = "pass"
-                completion = 100
-                passed = len(statuses)
-                total = len(statuses)
-                
+            elif completion == 0:
+                final_status = "empty" 
+            else:
+                final_status = "pending"
+            
+            # Create Ingest Item
             item = {
                 "project_name": system_name,
                 "row_id": row_id,
                 "phase_id": phase,
                 "status": final_status,
                 "completion": completion,
-                "scenarios_total": total,
-                "scenarios_passed": passed,
-                "steps_total": total * 5,
-                "steps_passed": passed * 5
+                "scenarios_total": total_scenarios,
+                "scenarios_passed": passed_scenarios,
+                "steps_total": total_steps,
+                "steps_passed": passed_steps
             }
             ingest_items.append(item)
             
@@ -215,22 +267,31 @@ def parse_cucumber_json(file_path):
             tags = [t['name'] for t in element.get('tags', [])]
             tag_str = " ".join(tags)
             
-            # Determine status
+            # Determine status & step counts
             steps = element.get('steps', [])
+            total_steps = len(steps)
+            passed_steps = 0
+            
+            for s in steps:
+                if s.get('result', {}).get('status') == 'passed':
+                    passed_steps += 1
+            
             if not steps:
                 status = "pending"
-            elif any(s['result']['status'] == 'failed' for s in steps):
+            elif any(s.get('result', {}).get('status') == 'failed' for s in steps):
                 status = "failed"
-            elif any(s['result']['status'] == 'undefined' for s in steps):
+            elif any(s.get('result', {}).get('status') == 'undefined' for s in steps):
                 status = "pending"
-            elif all(s['result']['status'] == 'passed' for s in steps):
+            elif all(s.get('result', {}).get('status') == 'passed' for s in steps):
                 status = "passed"
             else:
-                status = "pending" # Default (e.g. skipped)
+                status = "pending"
                 
             results.append({
                 "tag": tag_str,
-                "status": status
+                "status": status,
+                "total_steps": total_steps,
+                "passed_steps": passed_steps
             })
             
     return results
