@@ -12,6 +12,6 @@ Feature: Vörðu Frontend
 
     Scenario: User opens BDD Overlay
         Given the Vörðu UI is running
-        When I click on a "100%" completion cell
+        When I click on a status cell
         Then the BDD Overlay should appear
         And I should see "Verified Features"

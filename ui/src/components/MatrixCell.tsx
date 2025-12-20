@@ -4,7 +4,7 @@ interface MatrixCellProps {
     project: string;
     row: string;
     phase: number;
-    status: 'pass' | 'fail' | 'pending' | 'empty';
+    status: 'pass' | 'failed' | 'pending' | 'empty';
     completion?: number; // 0-100
     scenariosTotal?: number;
     scenariosPassed?: number;

@@ -2,7 +2,7 @@ export interface MatrixCellData {
     project: string;
     row: string;
     phase: number;
-    status: 'pass' | 'fail' | 'pending' | 'empty';
+    status: 'pass' | 'failed' | 'pending' | 'empty';
     completion: number;
     scenarios_total?: number;
     scenarios_passed?: number;

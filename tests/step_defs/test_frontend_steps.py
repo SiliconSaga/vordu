@@ -26,11 +26,13 @@ def see_vordu_header(page: Page):
 def see_demicracy_row(page: Page):
     expect(page.get_by_text("Demicracy")).to_be_visible()
 
-@when('I click on a "100%" completion cell')
-def click_completion_cell(page: Page):
+@when('I click on a status cell')
+def click_status_cell(page: Page):
     # Find a cell with "1/1" (Scenario count) text and click it
-    # MatrixCell renders "passed/total" scenarios if counts exist
-    page.get_by_text("1/1").first.click()
+    # We prefer counts over percentages now.
+    cell = page.get_by_text("1/1").first
+    expect(cell).to_be_visible()
+    cell.click()
 
 @then('the BDD Overlay should appear')
 def bdd_overlay_appears(page: Page):

@@ -280,7 +280,7 @@ def parse_cucumber_json(file_path):
                 status = "pending"
             elif any(s.get('result', {}).get('status') == 'failed' for s in steps):
                 status = "failed"
-            elif any(s.get('result', {}).get('status') == 'undefined' for s in steps):
+            elif any(s.get('result', {}).get('status') in ['undefined', 'skipped'] for s in steps):
                 status = "pending"
             elif all(s.get('result', {}).get('status') == 'passed' for s in steps):
                 status = "passed"
