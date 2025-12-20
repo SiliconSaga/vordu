@@ -7,5 +7,3 @@ playwright==1.40.0
 requests==2.32.5
 sqlalchemy==2.0.44
 pydantic==2.12.4
-pytest-cucumberjson
-

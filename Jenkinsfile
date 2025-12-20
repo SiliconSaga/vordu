@@ -140,7 +140,7 @@ pipeline {
                                 # Run tests (generating cucumber.json and junit report)
                                 export UI_BASE_URL="http://localhost:8000"
                                 # We need cucumber.json for Vörðu ingestion
-                                pytest --junitxml=report.xml --cucumberjson=cucumber.json || true
+                                pytest --junitxml=report.xml --cucumber-json=cucumber.json || true
                             fi
                         """
                     }

@@ -1,8 +1,6 @@
-from pytest_bdd import scenario, given, when, then
+from pytest_bdd import scenarios, given, when, then
 
-@scenario('../features/database.feature', 'Persist Project Structure')
-def test_persist_project_structure():
-    pass
+scenarios('../features/database.feature')
 
 @given('a clean database')
 def clean_database():
