@@ -1,4 +1,4 @@
-import pytest
+
 from pytest_bdd import scenario, given, when, then
 
 @scenario('../features/autoboros.feature', 'Agent Framework Scaffolding')

@@ -36,7 +36,21 @@ cd ui
 npm run dev
 ```
 
-Runs standaloneon `http://localhost:5173`.
+Runs standalone on `http://localhost:5173`.
+
+## Running Tests
+
+To run the full suite (API + UI tests), you must have the services running.
+
+**Option 1: Dev Mode (Two Terminals)**
+1.  Start API: `api\.venv\Scripts\Activate.ps1; uvicorn api.main:app --reload`
+2.  Start UI: `cd ui; npm run dev`
+3.  Run Tests: `pytest`
+
+**Option 2: Integration Mode (Single Port)**
+1.  Build UI: `cd ui; npm run build`
+2.  Start API: `uvicorn api.main:app` (This serves the built UI at port 8000)
+3.  Run Tests: `$env:UI_BASE_URL="http://localhost:8000"; pytest`
 
 ## Secure
 

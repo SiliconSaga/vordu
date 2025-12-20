@@ -31,7 +31,7 @@ def post_cucumber_report(api_base_url):
         }
     ]
     try:
-        response = requests.post(f"{api_base_url}/ingest", json=payload)
+        response = requests.post(f"{api_base_url}/ingest", json=payload, headers={"X-API-Key": "dev-key"})
         pytest.response = response
     except requests.exceptions.ConnectionError:
         pytest.fail("Failed to connect to API")

@@ -24,6 +24,100 @@ def api_base_url():
 def ui_base_url():
     return os.getenv("UI_BASE_URL", "http://localhost:5173") # Better for local dev
 
+@pytest.fixture(scope="session")
+def browser_context_args(browser_context_args):
+    return {
+        **browser_context_args,
+        "viewport": {"width": 1280, "height": 720},
+    }
+
+@pytest.fixture(scope="function", autouse=True)
+def configure_timeout(page):
+    # Set default timeout to 2 seconds for faster fail-fast
+    page.set_default_timeout(2000)
+    return page
+
+import requests
+
+@pytest.fixture(scope="function", autouse=True)
+def clean_db(api_base_url):
+    """Ensures a clean database state before every test."""
+    try:
+        # Pass dev-key for admin access
+        requests.delete(f"{api_base_url}/admin/db", headers={"X-API-Key": "dev-key"})
+    except requests.ConnectionError:
+        pass # API might not be running if unit tests only
+
+@pytest.fixture
+def seed_demicracy_data(api_base_url):
+    """Seeds the Demicracy project configuration."""
+    payload = {
+        "system": {
+            "name": "demicracy",
+            "label": "Demicracy",
+            "description": "Core Project",
+            "domain": "Governance"
+        },
+        "components": [
+            {"name": "frontend", "label": "Frontend", "system": "demicracy"},
+            {"name": "api", "label": "API", "system": "demicracy"}
+        ]
+    }
+    requests.post(f"{api_base_url}/config/ingest", json=payload, headers={"X-API-Key": "dev-key"})
+    
+    # Also seed a mock status to make it visible/clickable (100% completion)
+    status_payload = [
+        # Phase 0: 50%
+        {
+            "project_name": "demicracy",
+            "row_id": "frontend",
+            "phase_id": 0,
+            "status": "pending",
+            "completion": 50,
+            "scenarios_total": 2,
+            "scenarios_passed": 1,
+            "steps_total": 10,
+            "steps_passed": 5
+        },
+        # Phase 1: 100% (The target for our test)
+        {
+            "project_name": "demicracy",
+            "row_id": "frontend",
+            "phase_id": 1,
+            "status": "pass",
+            "completion": 100,
+            "scenarios_total": 1,
+            "scenarios_passed": 1,
+            "steps_total": 5,
+            "steps_passed": 5
+        },
+        # Phase 2: 0%
+        {
+            "project_name": "demicracy",
+            "row_id": "frontend",
+            "phase_id": 2,
+            "status": "empty",
+            "completion": 0,
+            "scenarios_total": 0,
+            "scenarios_passed": 0,
+            "steps_total": 0,
+            "steps_passed": 0
+        },
+        # Phase 3: 0%
+        {
+            "project_name": "demicracy",
+            "row_id": "frontend",
+            "phase_id": 3,
+            "status": "empty",
+            "completion": 0,
+            "scenarios_total": 0,
+            "scenarios_passed": 0,
+            "steps_total": 0,
+            "steps_passed": 0
+        }
+    ]
+    requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})
+
 def pytest_bdd_apply_tag(tag, function):
     """
     Custom tag parsing for Vordu BDD tags.

@@ -10,7 +10,7 @@ def test_open_bdd_overlay():
     pass
 
 @given('the Vörðu UI is running')
-def vordu_ui_running(page: Page, ui_base_url):
+def vordu_ui_running(page: Page, ui_base_url, seed_demicracy_data):
     page.goto(ui_base_url)
 
 @when('I visit the home page')
@@ -28,8 +28,9 @@ def see_demicracy_row(page: Page):
 
 @when('I click on a "100%" completion cell')
 def click_completion_cell(page: Page):
-    # Find a cell with 100% text and click it
-    page.get_by_text("100%").first.click()
+    # Find a cell with "1/1" (Scenario count) text and click it
+    # MatrixCell renders "passed/total" scenarios if counts exist
+    page.get_by_text("1/1").first.click()
 
 @then('the BDD Overlay should appear')
 def bdd_overlay_appears(page: Page):

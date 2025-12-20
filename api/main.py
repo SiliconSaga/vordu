@@ -62,14 +62,22 @@ def health_check():
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
-    expected_key = os.getenv("VORDU_API_KEY")
-    if not expected_key:
-        # If no key configured in env, allow open access (dev mode). Otherwise expect key present in environment.
-        return None
-        
+    expected_key = os.getenv("VORDU_API_KEY", "dev-key") # Default to dev-key if not set
+    
     if api_key_header == expected_key:
         return api_key_header
     raise HTTPException(status_code=403, detail="Could not validate credentials")
+
+@app.delete("/admin/db")
+def reset_database(db: Session = Depends(get_db), api_key: str = Depends(get_api_key)):
+    """Wipes the database for testing purposes."""
+    # Delete all rows in dependency order
+    db.query(MatrixCell).delete()
+    from .models import Row, System
+    db.query(Row).delete()
+    db.query(System).delete()
+    db.commit()
+    return {"status": "database_reset"}
 
 class ComponentItem(BaseModel):
     name: str # The ID
