@@ -1,3 +1,5 @@
+@Library('vordu-lib') _
+
 String deduceDockerTag() {
     String dockerTag = env.BRANCH_NAME
     if (dockerTag.equals("main") || dockerTag.equals("master")) {
@@ -137,7 +139,8 @@ pipeline {
                             else
                                 # Run tests (generating cucumber.json and junit report)
                                 export UI_BASE_URL="http://localhost:8000"
-                                pytest --junitxml=report.xml || true
+                                # We need cucumber.json for Vörðu ingestion
+                                pytest --junitxml=report.xml --cucumberjson=cucumber.json || true
                             fi
                         """
                     }
@@ -208,7 +211,7 @@ pipeline {
             }
         }
 
-        stage('Ingest BDD') {
+        stage('Ingest to Vörðu') {
             when {
                 branch 'main'
             }
@@ -217,21 +220,13 @@ pipeline {
             }
             steps {
                 container('builder') {
-                    script {
-                        checkout scm
-                        unstash 'test-results'
-                        
-                        // Ingest the test results into the deployed API
-                        withCredentials([string(credentialsId: 'vordu-api-key', variable: 'VORDU_API_KEY')]) {
-                            sh """
-                                # Install requests if not present
-                                pip install requests
-                                
-                                # Run ingestion script
-                                python scripts/ingest_cucumber.py cucumber.json \
-                                    --api http://vordu-service.${K8S_NAMESPACE}.svc.cluster.local \
-                                    --api-key \${VORDU_API_KEY}
-                            """
+                    withCredentials([string(credentialsId: 'vordu-api-key', variable: 'VORDU_API_KEY')]) {
+                        script {
+                            // Dogfooding: Use our own shared library
+                            ingestVordu(
+                                catalogPath: 'catalog-info.yaml',
+                                reportPath: 'cucumber.json'
+                            )
                         }
                     }
                 }

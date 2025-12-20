@@ -54,7 +54,7 @@ To run the full suite (API + UI tests), you must have the services running.
 
 ## Secure
 
-The API is secured with a simple secret key (`VORDU_API_KEY`) passed as a header `X-API-Key`. Default: `dev-key`.
+The API is secured with a simple secret key (`VORDU_API_KEY`) passed as a header `X-API-Key`. Default is `dev-key` while a secret one is stored in Jenkins and used in the pipeline as a credential.
 
 ## Jenkins Integration
 
