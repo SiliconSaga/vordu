@@ -140,8 +140,13 @@ pipeline {
                                 # Run tests (generating cucumber.json and junit report)
                                 export UI_BASE_URL="http://localhost:8000"
                                 # We need cucumber.json for Vörðu ingestion
+                                # Run tests, capture failure, but ensure report generation is checked.
+                                # pytest-bdd usually generates report even on failure.
+                                # If pytest CRASHES (e.g. collection error), report is not generated.
                                 pytest --junitxml=report.xml --cucumber-json=cucumber.json || true
-                            fi
+                                
+                                # Fail if report wasn't generated
+                                ls -l cucumber.json || { echo "Error: cucumber.json not generated!"; exit 1; }
                         """
                     }
                 }
