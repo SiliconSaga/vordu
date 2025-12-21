@@ -228,6 +228,9 @@ pipeline {
                 container('builder') {
                     withCredentials([string(credentialsId: 'vordu-api-key', variable: 'VORDU_API_KEY')]) {
                         script {
+                            // Unstash test results so 'cucumber.json' exists for ingestion
+                            unstash 'test-results'
+
                             // Dogfooding: Use our own shared library
                             ingestVordu(
                                 catalogPath: 'catalog-info.yaml',
