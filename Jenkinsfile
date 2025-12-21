@@ -147,6 +147,7 @@ pipeline {
                                 
                                 # Fail if report wasn't generated
                                 ls -l cucumber.json || { echo "Error: cucumber.json not generated!"; exit 1; }
+                            fi
                         """
                     }
                 }
