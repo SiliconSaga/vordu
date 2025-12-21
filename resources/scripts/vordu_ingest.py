@@ -109,18 +109,21 @@ def build_status_payload(vordu_data, test_results):
         
         parts = tag_str.split()
         for part in parts:
-            if part.startswith("@component:"):
-                comp_name = part.split(":")[1]
-            elif part.startswith("@vordu:row="): # Support vordu tags
-                comp_name = part.split("=")[1]
-            elif part.startswith("@phase:"):
+            # Normalize tag (remove @ if present)
+            clean_part = part.lstrip("@")
+            
+            if clean_part.startswith("component:"):
+                comp_name = clean_part.split(":")[1]
+            elif clean_part.startswith("vordu:row="): # Support vordu tags
+                comp_name = clean_part.split("=")[1]
+            elif clean_part.startswith("phase:"):
                 try:
-                    phase_id = int(part.split(":")[1])
+                    phase_id = int(clean_part.split(":")[1])
                 except ValueError:
                     continue
-            elif part.startswith("@vordu:phase="): # Support vordu tags
+            elif clean_part.startswith("vordu:phase="): # Support vordu tags
                 try:
-                    phase_id = int(part.split("=")[1])
+                    phase_id = int(clean_part.split("=")[1])
                 except ValueError:
                     continue
         
