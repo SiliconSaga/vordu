@@ -136,7 +136,10 @@ def build_status_payload(vordu_data, test_results):
                 "passed_steps": r_passed,
                 "total_steps": r_total
             })
+            print(f"DEBUG: Mapped {tag_str} -> {key} Status: {status} Steps: {r_passed}/{r_total}")
 
+    print(f"DEBUG: Status Map Keys: {list(status_map.keys())}")
+    
     # Grouping Logic
     groups = {} # Key: (row_id), Value: {phase: [list of component items]}
     
@@ -313,7 +316,10 @@ def parse_cucumber_json(file_path):
                 if s.get('result', {}).get('status') == 'passed':
                     passed_steps += 1
             
-            if not steps:
+            if "wip" in tags or "@wip" in tags or any(t.endswith("wip") for t in tags):
+                 status = "pending"
+                 passed_steps = 0 # Force 0/N completion
+            elif not steps:
                 status = "pending"
             elif any(s.get('result', {}).get('status') == 'failed' for s in steps):
                 status = "failed"

@@ -3,7 +3,7 @@ Feature: Demicracy Core
     I want to participate in digital democracy
     So that my voice is heard
 
-    @vordu:project=demicracy @vordu:row=identity @vordu:phase=0
+    @vordu:project=demicracy @vordu:row=identity @vordu:phase=0 @wip
     Scenario: Core Identity Module
         Given the identity service is running
         When I register a new user
