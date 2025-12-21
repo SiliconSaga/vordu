@@ -46,10 +46,11 @@ def extract_vordu_metadata(entities):
         if kind == 'System':
             data['system'] = {
                 "name": name,
-                "label": row_label or name,
+                "label": name.capitalize(), # Header uses Name (e.g. Mimir)
+                "row_label": row_label or name, # Specific label for the Section Row
                 "description": meta.get('description'),
                 "domain": spec.get('domain'),
-                "granularity": annotations.get('vordu.io/granularity', 'component') # Default: component
+                "granularity": annotations.get('vordu.io/granularity', 'component') 
             }
         elif kind == 'Component':
             component_data = {
@@ -60,6 +61,8 @@ def extract_vordu_metadata(entities):
             }
             data['components'].append(component_data)
             
+
+
     return data
 
 def mock_bdd_results():
@@ -83,7 +86,20 @@ def mock_bdd_results():
 
 def build_config_payload(vordu_data):
     """Payload for /config/ingest"""
-    return vordu_data
+    import copy
+    payload = copy.deepcopy(vordu_data)
+    
+    if payload['system']['granularity'] == 'system':
+        # Synthesize the System Row for Config ONLY
+        system_item = {
+            "name": payload['system']['name'],
+            "label": payload['system'].get('row_label', payload['system']['name']),
+            "system": payload['system']['name'],
+            "parent": None
+        }
+        payload['components'] = [system_item]
+        
+    return payload
 
 def build_status_payload(vordu_data, test_results):
     """Payload for /ingest (Flattened List[IngestItem])."""
@@ -158,7 +174,14 @@ def build_status_payload(vordu_data, test_results):
         else:
             # Default or explicit 'subcomponent' -> Own row
             target_row = comp_name
-            
+
+        # Ensure we use the proper ID for the groups dictionary
+        # For system granularity, this MUST match the system name as defined in build_config_payload
+        if granularity == 'system':
+             # The system logic above sets target_row = system_name (e.g. 'mimir')
+             # The config payload sets id = system_name ('mimir')
+             pass 
+             
         if target_row not in groups:
             groups[target_row] = {}
             
