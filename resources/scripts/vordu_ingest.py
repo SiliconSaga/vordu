@@ -111,9 +111,16 @@ def build_status_payload(vordu_data, test_results):
         for part in parts:
             if part.startswith("@component:"):
                 comp_name = part.split(":")[1]
+            elif part.startswith("@vordu:row="): # Support vordu tags
+                comp_name = part.split("=")[1]
             elif part.startswith("@phase:"):
                 try:
                     phase_id = int(part.split(":")[1])
+                except ValueError:
+                    continue
+            elif part.startswith("@vordu:phase="): # Support vordu tags
+                try:
+                    phase_id = int(part.split("=")[1])
                 except ValueError:
                     continue
         
@@ -195,12 +202,31 @@ def build_status_payload(vordu_data, test_results):
                 completion = 0
             
             # Status Determination
-            if completion == 100:
-                final_status = "pass"
+            # Check for failures first
+            has_failures = any(item['status'] == 'failed' for item in items if 'status' in item) # Wait, stored items don't have status, they have counts.
+            # We need to deduce status from counts or store it.
+            # Actually, `items` are the granular chunks from children.
+            # But the Grouping logic threw away the 'status' (pass/fail/pending) and just kept counts.
+            # We should re-derive status from counts.
+            
+            if total_steps == 0:
+                final_status = "empty"
+            elif completion == 100:
+                final_status = "passed" # Frontend expects 'passed' or 'pass'? Types say 'pass'. Script used 'pass'.
             elif completion == 0:
-                final_status = "empty" 
+                # Disambiguate O% (Pending) vs Failure vs Empty
+                # We know total_step > 0.
+                final_status = "pending" 
             else:
-                final_status = "pending"
+                 final_status = "pending" # Partial completion
+            
+            # Correction: If we want to show red for failures, we need failure count.
+            # Currently we only track passed/total. 
+            # If total > passed, it implies incomplete or failed.
+            # Vörðu UI simplifies this to completion %.
+            # The only distinction is 0% (Pending) vs Empty.
+            
+            if final_status == "passed": final_status = "pass" # Align with UI types
             
             # Create Ingest Item
             item = {
