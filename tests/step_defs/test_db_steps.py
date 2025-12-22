@@ -1,15 +1,15 @@
 from pytest_bdd import scenarios, scenario, given, when, then
 import pytest
 
-@scenario('../features/database.feature', 'Kafka Connectivity')
+@scenario('../features/db.feature', 'Kafka Connectivity')
 def test_kafka_connectivity():
     pass
 
-@scenario('../features/database.feature', 'Persist via Event Stream')
+@scenario('../features/db.feature', 'Persist via Event Stream')
 def test_persist_via_event_stream():
     pass
 
-@scenario('../features/database.feature', 'Rebuild State from History')
+@scenario('../features/db.feature', 'Rebuild State from History')
 def test_rebuild_state():
     pass
 

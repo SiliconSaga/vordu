@@ -68,20 +68,12 @@ def extract_vordu_metadata(entities):
 def mock_bdd_results():
     """Returns mock BDD data."""
     return [
-        {"tag": "@component:vordu-api @phase:1", "status": "passed"},
-        {"tag": "@component:autoboros-agent @phase:1", "status": "failed"},
+        {"feature": "Vörðu API", "name": "Ingest Cucumber JSON", "tag": "@component:vordu-api @phase:1", "status": "passed"},
+        {"feature": "Autoboros Agent", "name": "Spawn Agent", "tag": "@component:autoboros-agent @phase:1", "status": "failed"},
         
-        # Mimir Data
-        {"tag": "@component:mimir-kafka @phase:0", "status": "passed"},
-        {"tag": "@component:mimir-kafka @phase:1", "status": "passed"},
-        {"tag": "@component:mimir-kafka @phase:2", "status": "pending"},
-        
-        {"tag": "@component:mimir-valkey @phase:0", "status": "passed"},
-        {"tag": "@component:mimir-valkey @phase:1", "status": "passed"},
-        
-        {"tag": "@component:mimir-percona-postgres @phase:1", "status": "passed"},
-        {"tag": "@component:mimir-percona-mysql @phase:1", "status": "pending"},
-        {"tag": "@component:mimir-percona-mongo @phase:1", "status": "failed"}
+        # Mimir Data mocks left simple for now as they are checked via logic usually
+        # But should be updated if used heavily. For now, just fix structure to avoid crash.
+        {"feature": "Mimir", "name": "Kafka Test", "tag": "@component:mimir-kafka @phase:0", "status": "passed"},
     ]
 
 def build_config_payload(vordu_data):
@@ -147,11 +139,18 @@ def build_status_payload(vordu_data, test_results):
             key = (comp_name, phase_id)
             if key not in status_map:
                 status_map[key] = []
-            status_map[key].append({
+            
+            # Store full result object for details
+            detail_item = {
+                "feature": result.get('feature', 'Unknown'),
+                "scenario": result.get('name', 'Unknown'), # Normalize key to 'scenario' for UI
                 "status": status,
                 "passed_steps": r_passed,
-                "total_steps": r_total
-            })
+                "total_steps": r_total,
+                "tag": tag_str
+            }
+            
+            status_map[key].append(detail_item)
             print(f"DEBUG: Mapped {tag_str} -> {key} Status: {status} Steps: {r_passed}/{r_total}")
 
     print(f"DEBUG: Status Map Keys: {list(status_map.keys())}")
@@ -175,13 +174,6 @@ def build_status_payload(vordu_data, test_results):
             # Default or explicit 'subcomponent' -> Own row
             target_row = comp_name
 
-        # Ensure we use the proper ID for the groups dictionary
-        # For system granularity, this MUST match the system name as defined in build_config_payload
-        if granularity == 'system':
-             # The system logic above sets target_row = system_name (e.g. 'mimir')
-             # The config payload sets id = system_name ('mimir')
-             pass 
-             
         if target_row not in groups:
             groups[target_row] = {}
             
@@ -203,7 +195,8 @@ def build_status_payload(vordu_data, test_results):
                 "passed_scenarios": passed_scenarios_count,
                 "total_scenarios": total_scenarios_count,
                 "passed_steps": passed_steps_count,
-                "total_steps": total_steps_count
+                "total_steps": total_steps_count,
+                "details": results_list # Store the raw list of scenarios for aggregation
             })
 
     ingest_items = []
@@ -222,38 +215,26 @@ def build_status_payload(vordu_data, test_results):
             total_steps = sum(item['total_steps'] for item in items)
             passed_steps = sum(item['passed_steps'] for item in items)
             
+            # Aggregate Details
+            all_details = []
+            for item in items:
+                all_details.extend(item.get('details', []))
+            
             # Completion Calculation
             if total_steps > 0:
                 completion = int((passed_steps / total_steps) * 100)
             else:
-                # If no tests found, check if explicitly empty or pending?
-                # If we have items but 0 tests, it means 0% completion.
                 completion = 0
             
             # Status Determination
-            # Check for failures first
-            has_failures = any(item['status'] == 'failed' for item in items if 'status' in item) # Wait, stored items don't have status, they have counts.
-            # We need to deduce status from counts or store it.
-            # Actually, `items` are the granular chunks from children.
-            # But the Grouping logic threw away the 'status' (pass/fail/pending) and just kept counts.
-            # We should re-derive status from counts.
-            
-            if total_steps == 0:
+            if total_steps == 0 and total_scenarios == 0:
                 final_status = "empty"
             elif completion == 100:
-                final_status = "passed" # Frontend expects 'passed' or 'pass'? Types say 'pass'. Script used 'pass'.
+                final_status = "passed"
             elif completion == 0:
-                # Disambiguate O% (Pending) vs Failure vs Empty
-                # We know total_step > 0.
-                final_status = "pending" 
+                final_status = "pending"
             else:
                  final_status = "pending" # Partial completion
-            
-            # Correction: If we want to show red for failures, we need failure count.
-            # Currently we only track passed/total. 
-            # If total > passed, it implies incomplete or failed.
-            # Vörðu UI simplifies this to completion %.
-            # The only distinction is 0% (Pending) vs Empty.
             
             if final_status == "passed": final_status = "pass" # Align with UI types
             
@@ -267,7 +248,8 @@ def build_status_payload(vordu_data, test_results):
                 "scenarios_total": total_scenarios,
                 "scenarios_passed": passed_scenarios,
                 "steps_total": total_steps,
-                "steps_passed": passed_steps
+                "steps_passed": passed_steps,
+                "details": all_details
             }
             ingest_items.append(item)
             
@@ -314,9 +296,13 @@ def parse_cucumber_json(file_path):
     results = []
     
     for feature in features:
+        feature_name = feature.get('name', 'Unknown Feature')
+        
         for element in feature.get('elements', []):
             if element['type'] != 'scenario':
                 continue
+            
+            scenario_name = element.get('name', 'Unknown Scenario')
             
             # Extract tags (Handle both dicts `{'name': '@tag'}` and strings `"@tag"`)
             raw_tags = element.get('tags', [])
@@ -342,18 +328,24 @@ def parse_cucumber_json(file_path):
             if "wip" in tags or "@wip" in tags or any(t.endswith("wip") for t in tags):
                  status = "pending"
                  passed_steps = 0 # Force 0/N completion
+                 total_steps = 0  # Force 0 total steps for WIP to hide counts
             elif not steps:
                 status = "pending"
+                total_steps = 0
             elif any(s.get('result', {}).get('status') == 'failed' for s in steps):
                 status = "failed"
             elif any(s.get('result', {}).get('status') in ['undefined', 'skipped'] for s in steps):
                 status = "pending"
+                total_steps = 0 # Treat skipped/undefined as having no visible steps
             elif all(s.get('result', {}).get('status') == 'passed' for s in steps):
                 status = "passed"
             else:
                 status = "pending"
+                total_steps = 0
                 
             results.append({
+                "feature": feature_name,
+                "name": scenario_name,
                 "tag": tag_str,
                 "status": status,
                 "total_steps": total_steps,
@@ -392,6 +384,60 @@ def main():
     # 1. Config Ingestion
     config_payload = build_config_payload(vordu_data)
     
+    # NEW: Phase A - Direct Feature Scanning (Planned Work)
+    print("Scanning feature files for planned scenarios...")
+    # Assume feature files are in a standard location relative to catalog or use current dir
+    # For now, we search recursively in current working directory
+    # Ideally this root should be configurable or relative to catalog file dir
+    root_dir = os.path.dirname(os.path.abspath(args.catalog))
+    scanned_features = scan_feature_files(root_dir, vordu_data['system'])
+    print(f"Found {len(scanned_features)} planned scenarios.")
+
+    if args.report:
+        print(f"Parsing test results from {args.report}...")
+        results = parse_cucumber_json(args.report)
+    else:
+        print("Using Mock BDD results (No report provided).")
+        results = mock_bdd_results()
+        
+    # NEW: Phase B - Merge Logic
+    # We want to create a master list of results.
+    # 1. Start with Scanned Scenarios (Status: Planned/Pending)
+    # 2. Overlay Execution Results (Status: Pass/Fail/Skip -> Pending)
+    
+    # Create a lookup for results by (Feature, Scenario)
+    result_map = {}
+    for r in results:
+        key = (r.get('feature'), r.get('name'))
+        result_map[key] = r
+    
+    merged_results = []
+    
+    for scanned in scanned_features:
+        key = (scanned['feature'], scanned['name'])
+        
+        if key in result_map:
+             # Found execution result -> Use it
+             # Use Scanned Tags (includes conventions) + Result Status
+             result = result_map[key]
+             merged_item = scanned.copy()
+             merged_item['status'] = result['status']
+             merged_item['total_steps'] = result['total_steps']
+             merged_item['passed_steps'] = result['passed_steps']
+             
+             merged_results.append(merged_item)
+             # Mark as used
+             del result_map[key]
+        else:
+             # No result -> It is Planned
+             merged_results.append(scanned)
+             
+    # Add any remaining results (Dynamic/Generated tests?)
+    for r in result_map.values():
+        merged_results.append(r)
+            
+    final_results = merged_results
+
     if args.api_url:
         config_url = f"{args.api_url}/config/ingest"
         print(f"Posting Config to {config_url}...")
@@ -399,8 +445,8 @@ def main():
             print(f"Failed to post config to {config_url}")
             sys.exit(1)
         
-        # 2. Status Ingestion
-        status_payload = build_status_payload(vordu_data, results)
+        # 2. Status Ingestion (Using Merged Results)
+        status_payload = build_status_payload(vordu_data, final_results)
         status_url = f"{args.api_url}/ingest"
         print(f"Posting Status to {status_url}...")
         if not post_to_api(status_url, args.api_key, status_payload):
@@ -411,8 +457,110 @@ def main():
         print("\n[Generated Config Payload]")
         print(json.dumps(config_payload, indent=2))
         print("\n[Generated Status Payload]")
-        status_payload = build_status_payload(vordu_data, results)
+        status_payload = build_status_payload(vordu_data, final_results)
         print(json.dumps(status_payload, indent=2))
+
+def deduce_component_from_path(file_path, system_name):
+    """
+    Deduces component name from file path conventions.
+    1. features/<name>/*.feature -> system-<name>
+    2. features/<name>.feature -> system-<name>
+    """
+    # Normalize path separators
+    path = file_path.replace('\\', '/')
+    parts = path.split('/')
+    
+    filename = parts[-1]
+    name_no_ext = os.path.splitext(filename)[0]
+    
+    # Logic: Look for 'features' dir
+    try:
+        features_idx = parts.index('features')
+        # Check Subdirectory (Rule 2)
+        if len(parts) > features_idx + 2:
+            subdir = parts[features_idx + 1]
+            return f"{system_name}-{subdir}"
+        
+        # Check Filename (Rule 3)
+        if len(parts) == features_idx + 2:
+             return f"{system_name}-{name_no_ext}"
+             
+    except ValueError:
+        pass
+        
+    return None
+
+def scan_feature_files(root_dir, system_info):
+    """Scans .feature files for scenarios and interprets tags/conventions."""
+    import glob
+    import re
+    
+    scanned_items = []
+    system_name = system_info['name']
+    
+    # Find all feature files recursively
+    # Use glob with recursive flag
+    pattern = os.path.join(glob.escape(root_dir), "**", "*.feature")
+    files = glob.glob(pattern, recursive=True)
+    
+    for file_path in files:
+        # Determine Convention Component
+        convention_comp = deduce_component_from_path(file_path, system_name)
+        
+        with open(file_path, 'r', encoding='utf-8') as f:
+            lines = f.readlines()
+            
+        current_tags = []
+        current_feature_name = "Unknown Feature"
+        
+        for line in lines:
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Naive Gherkin Parsing
+            if line.startswith('@'):
+                # Tag line
+                current_tags.extend(line.split())
+            elif line.startswith('Feature:'):
+                 # Extract Feature Name
+                 parts = line.split(':', 1)
+                 if len(parts) > 1:
+                     current_feature_name = parts[1].strip()
+                 current_tags = [] # Reset tags
+            elif line.startswith('Scenario:') or line.startswith('Scenario Outline:'):
+                # Found a Scenario
+                parts = line.split(':', 1)
+                scenario_name = parts[1].strip() if len(parts) > 1 else "Unknown"
+
+                # Determine Tags
+                final_tags = list(current_tags)
+                tag_str = " ".join(final_tags)
+                
+                # Check if explicit row tag exists
+                has_row_tag = any(t.startswith("@vordu:row=") or t.startswith("@component:") for t in final_tags)
+                
+                if not has_row_tag and convention_comp:
+                    # Apply Convention Tag
+                    # We inject it into the tag string so build_status_payload can parse it
+                    tag_str += f" @component:{convention_comp}"
+                
+                scanned_items.append({
+                    "feature": current_feature_name,
+                    "name": scenario_name,
+                    "tag": tag_str,
+                    "status": "pending", # Default to pending/planned
+                    "total_steps": 0,    # 0 indicates purely planned (not executed)
+                    "passed_steps": 0
+                })
+                
+                current_tags = [] # Reset for next scenario
+            elif line.startswith('#'):
+                 pass
+            else:
+                 pass
+                 
+    return scanned_items
 
 if __name__ == "__main__":
     main()

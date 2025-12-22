@@ -1,3 +1,12 @@
+export interface ScenarioDetail {
+    feature: string;
+    scenario: string;
+    status: 'passed' | 'failed' | 'pending' | 'undefined' | 'skipped';
+    passed_steps: number;
+    total_steps: number;
+    tag?: string;
+}
+
 export interface MatrixCellData {
     project: string;
     row: string;
@@ -8,6 +17,7 @@ export interface MatrixCellData {
     scenarios_passed?: number;
     steps_total?: number;
     steps_passed?: number;
+    details?: ScenarioDetail[];
     updateText?: string;
     link?: string;
 }

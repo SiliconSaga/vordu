@@ -41,6 +41,7 @@ class IngestItem(BaseModel):
     scenarios_passed: int
     steps_total: int
     steps_passed: int
+    details: List[dict] = []
 
 class MatrixResponse(BaseModel):
     project: str
@@ -52,6 +53,7 @@ class MatrixResponse(BaseModel):
     scenarios_passed: int
     steps_total: int
     steps_passed: int
+    details: List[dict] = []
 
 
 
@@ -164,7 +166,8 @@ def ingest_status(items: List[IngestItem], db: Session = Depends(get_db), api_ke
                 scenarios_total=item.scenarios_total,
                 scenarios_passed=item.scenarios_passed,
                 steps_total=item.steps_total,
-                steps_passed=item.steps_passed
+                steps_passed=item.steps_passed,
+                details=item.details
             )
             db.add(cell)
         else:
@@ -174,6 +177,7 @@ def ingest_status(items: List[IngestItem], db: Session = Depends(get_db), api_ke
             cell.scenarios_passed = item.scenarios_passed
             cell.steps_total = item.steps_total
             cell.steps_passed = item.steps_passed
+            cell.details = item.details
         updated_count += 1
     
     db.commit()
@@ -192,7 +196,8 @@ def get_matrix(db: Session = Depends(get_db)):
             scenarios_total=c.scenarios_total,
             scenarios_passed=c.scenarios_passed,
             steps_total=c.steps_total,
-            steps_passed=c.steps_passed
+            steps_passed=c.steps_passed,
+            details=c.details
         ) for c in cells
     ]
 

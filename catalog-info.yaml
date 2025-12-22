@@ -6,9 +6,11 @@ metadata:
   description: The dynamic roadmap visualization system.
   annotations:
     vordu.io/row-label: "Roadmap Visualization"
+    github.com/project-slug: siliconsaga/vordu
 spec:
   owner: cervator
   domain: yggdrasil
+  lifecycle: experimental
 
 ---
 # Vörðu Frontend
@@ -18,7 +20,8 @@ metadata:
   name: vordu-web
   system: vordu
   annotations:
-    vordu.io/row-label: "Web UI"
+    vordu.io/row-label: "Web"
+    github.com/project-slug: siliconsaga/vordu
 spec:
   type: website
   lifecycle: experimental
@@ -32,7 +35,8 @@ metadata:
   name: vordu-api
   system: vordu
   annotations:
-    vordu.io/row-label: "API & Ingestion"
+    vordu.io/row-label: "API"
+    github.com/project-slug: siliconsaga/vordu
 spec:
   type: service
   lifecycle: experimental
@@ -46,7 +50,8 @@ metadata:
   name: vordu-db
   system: vordu
   annotations:
-    vordu.io/row-label: "State Persistence"
+    vordu.io/row-label: "DB"
+    github.com/project-slug: siliconsaga/vordu
 spec:
   type: resource
   lifecycle: production

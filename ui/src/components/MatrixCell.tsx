@@ -31,7 +31,9 @@ export const MatrixCell = ({
 
     return (
         <motion.div
-            onClick={onClick}
+            onClick={() => {
+                if (status !== 'empty' && onClick) onClick();
+            }}
             whileHover={{ scale: 1.05, opacity: 1 }}
             className="relative w-full h-24 rounded-lg border flex flex-col items-center justify-center px-1 py-2 cursor-pointer overflow-hidden group"
             style={{ borderColor: color, color: color }}
@@ -53,11 +55,16 @@ export const MatrixCell = ({
                 {/* Content: Metrics OR Percentage */}
                 {(completion > 0 || scenariosTotal > 0) && (
                     <>
-                        {(scenariosTotal > 0 || stepsTotal > 0) ? (
+                        {(scenariosTotal > 0 && stepsTotal > 0) ? (
                             <div className="flex flex-row items-center justify-center gap-1 text-base font-bold font-mono drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
                                 <span>{scenariosPassed}/{scenariosTotal}</span>
                                 <span>-</span>
                                 <span>{stepsPassed}/{stepsTotal}</span>
+                            </div>
+                        ) : (scenariosTotal > 0) ? (
+                            // Scenarios exist but 0 steps (Planned items), show just scenario count or simple completion
+                            <div className="flex flex-row items-center justify-center gap-1 text-base font-bold font-mono drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>
+                                <span>{scenariosPassed}/{scenariosTotal}</span>
                             </div>
                         ) : (
                             <span className="text-3xl font-black drop-shadow-md" style={{ textShadow: `0 0 5px ${color}` }}>

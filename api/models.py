@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, JSON
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
@@ -30,6 +30,9 @@ class MatrixCell(Base):
     scenarios_passed = Column(Integer, default=0)
     steps_total = Column(Integer, default=0)
     steps_passed = Column(Integer, default=0)
+    
+    # Detailed BDD Data
+    details = Column(JSON, default=[])
 
 class System(Base):
     __tablename__ = "systems"

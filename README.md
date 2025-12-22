@@ -109,3 +109,45 @@ pipeline {
     }
 }
 ```
+
+### 3. Manual Ingestion (Local)
+
+You can also run the ingestion process locally without Jenkins, which is useful for development.
+
+**Prerequisites:**
+1.  **Generate `cucumber.json`**: Ensure you have `pytest-cucumberjs` installed (`pip install pytest-cucumberjs`).
+    ```bash
+    pytest --cucumberjson=cucumber.json
+    ```
+2.  **Vörðu API**: Ensure the API is running locally (default: `http://localhost:8000`).
+
+**Run the Ingest Script:**
+
+```bash
+# syntax: python resources/scripts/vordu_ingest.py <catalog-path> --report <report-path> --api-url <url>
+python resources/scripts/vordu_ingest.py catalog-info.yaml --report cucumber.json --api-url http://localhost:8000
+```
+
+## Feature File Tagging & Conventions
+
+Vörðu relies on associating BDD scenarios with specific Roadmap components. To minimize maintenance overhead, the ingestion pipeline uses a "Convention over Configuration" approach to deduce which component a feature file belongs to.
+
+### Priority Resolution Logic
+
+The system resolves the target component for a feature file using the following priority order (highest to lowest):
+
+| Priority | Convention Source | Pattern | Example | Logic |
+| :--- | :--- | :--- | :--- | :--- |
+| **1** | **Explicit Tag** | `@vordu:row=X` | `@vordu:row=vordu-api` | **Always wins.** Use this to override conventions. |
+| **2** | **Subdirectory** | `features/<name>/*.feature` | `features/api/users.feature` | `<name>` is appended to the System Name (e.g. `vordu-api`). |
+| **3** | **Filename** | `features/<name>.feature` | `features/api.feature` | `<name>` is appended to the System Name (e.g. `vordu-api`). |
+| **4** | **System Default** | Root `*.feature` | `features/history.feature` | Defaults to System Row (if supported) or requires System Tag. |
+
+### Other Tags
+
+*   **`@wip`**: Marks a scenario as "Work In Progress".
+    *   **Behavior**:
+        *   Status is forced to **Pending**.
+        *   Step counts are hidden (treated as **Planned/0 steps**).
+        *   Useful for planning future work without polluting the "Failed" metrics.
+*   **`@vordu:phase=N`**: Explicitly assigns a scenario to a Roadmap Phase (0-3).

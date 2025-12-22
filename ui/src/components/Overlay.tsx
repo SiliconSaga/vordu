@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from 'framer-motion';
-import type { OverlayData } from '../types';
+import type { OverlayData, ScenarioDetail } from '../types';
 
 interface OverlayProps {
     isOpen: boolean;
@@ -59,59 +59,41 @@ export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
                             <div className="flex-grow overflow-y-auto p-8">
                                 <div className="max-w-4xl mx-auto space-y-8">
 
-                                    {/* Mock BDD Features */}
-                                    <div className="space-y-4">
-                                        <h3 className="text-xl font-mono text-gray-300 border-b border-gray-800 pb-2">
-                                            Verified Features
-                                        </h3>
-                                        <div className="space-y-4">
-                                            {/* Mock Feature 1 */}
-                                            <div className="bg-black/30 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="text-neon-green">✔</span>
-                                                    <span className="font-bold text-white">Feature: User Authentication</span>
-                                                </div>
-                                                <div className="pl-7 text-gray-400 font-mono text-sm space-y-1">
-                                                    <p>Scenario: Successful login with valid credentials</p>
-                                                    <p>Scenario: Password reset flow</p>
-                                                </div>
-                                            </div>
-
-                                            {/* Mock Feature 2 */}
-                                            <div className="bg-black/30 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className="text-neon-green">✔</span>
-                                                    <span className="font-bold text-white">Feature: Session Management</span>
-                                                </div>
-                                                <div className="pl-7 text-gray-400 font-mono text-sm space-y-1">
-                                                    <p>Scenario: Token refresh on expiry</p>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    {/* Failing/Pending Features */}
-                                    {(data.status === 'failed' || data.status === 'pending') && (
-                                        <div className="space-y-4">
-                                            <h3 className="text-xl font-mono text-gray-300 border-b border-gray-800 pb-2">
-                                                {data.status === 'failed' ? 'Failing Scenarios' : 'Pending Implementation'}
-                                            </h3>
-                                            <div className="bg-black/30 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors">
-                                                <div className="flex items-center gap-3 mb-2">
-                                                    <span className={data.status === 'failed' ? "text-red-500" : "text-yellow-500"}>
-                                                        {data.status === 'failed' ? '✘' : '⚠'}
-                                                    </span>
-                                                    <span className="font-bold text-white">Feature: Advanced Permissions</span>
-                                                </div>
-                                                <div className="pl-7 text-gray-400 font-mono text-sm space-y-1">
-                                                    <p>Scenario: Role-based access control for admins</p>
-                                                    <p className="text-red-400 italic">
-                                                        {data.status === 'failed' ? 'Error: Expected 403 but got 200' : 'Not implemented yet'}
-                                                    </p>
-                                                </div>
-                                            </div>
+                                    {(!data.details || data.details.length === 0) && (
+                                        <div className="text-gray-500 text-center italic">
+                                            No detailed scenarios recorded for this capability.
                                         </div>
                                     )}
+
+                                    {/* Group by Feature */}
+                                    {data.details && Object.entries(groupByFeature(data.details)).map(([feature, scenarios]) => (
+                                        <div key={feature} className="space-y-4">
+                                            <h3 className="text-xl font-mono text-gray-300 border-b border-gray-800 pb-2">
+                                                {feature}
+                                            </h3>
+
+                                            <div className="bg-black/30 border border-gray-800 rounded-lg p-4 hover:border-gray-600 transition-colors space-y-3">
+                                                {scenarios.map((scen, idx) => (
+                                                    <div key={idx} className="flex items-start gap-3">
+                                                        <StatusIcon status={scen.status} />
+                                                        <div>
+                                                            <p className="font-bold text-white text-sm">{scen.scenario}</p>
+                                                            <p className="text-xs font-mono text-gray-500">
+                                                                {scen.total_steps > 0 && (
+                                                                    <span>Steps: {scen.passed_steps}/{scen.total_steps}</span>
+                                                                )}
+                                                                {(scen.status === 'pending' || scen.status === 'skipped') && scen.total_steps > 0 &&
+                                                                    <span className="ml-2 text-yellow-600/70 italic">
+                                                                        (Planned / Not Implemented)
+                                                                    </span>
+                                                                }
+                                                            </p>
+                                                        </div>
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
 
                                 </div>
                             </div>
@@ -122,3 +104,28 @@ export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
         </AnimatePresence>
     );
 };
+
+// Helper components
+const StatusIcon = ({ status }: { status: string }) => {
+    switch (status) {
+        case 'passed': return <span className="text-neon-green">✔</span>;
+        case 'failed': return <span className="text-red-500">✘</span>;
+        case 'pending':
+        case 'skipped':
+        case 'undefined':
+            return <span className="text-yellow-500">⚠</span>;
+        default: return <span className="text-gray-500">?</span>;
+    }
+};
+
+const groupByFeature = (details: ScenarioDetail[]) => {
+    return details.reduce((groups, item) => {
+        const feature = item.feature || 'Unknown Feature';
+        if (!groups[feature]) {
+            groups[feature] = [];
+        }
+        groups[feature].push(item);
+        return groups;
+    }, {} as Record<string, ScenarioDetail[]>);
+};
+
