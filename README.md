@@ -18,7 +18,15 @@ How to run locally (on Windows for the moment)
 
 ### API
 
-Enable a virtual environment first, PS example: `api\.venv\Scripts\Activate.ps1`
+**Prerequisites:**
+*   Python 3.11
+*   `pip install -r api/requirements.txt`
+*   `playwright install` (Required for UI tests)
+
+Enable a virtual environment first:
+*   **Windows (PowerShell):** `api\.venv\Scripts\Activate.ps1`
+*   **Mac/Linux:** `source api/.venv/bin/activate`
+
 ```bash
 uvicorn api.main:app --reload
 ```
@@ -31,6 +39,10 @@ API runs on `http://localhost:8000` which also includes the frontend.
 
 ### UI
 
+**Prerequisites:**
+*   Node.js 20.19+ or 22.12+ (Use `fnm`, `nvm`, or `nodenv` to manage versions)
+*   `npm install`
+
 ```bash
 cd ui
 npm run dev
@@ -42,15 +54,20 @@ Runs standalone on `http://localhost:5173`.
 
 To run the full suite (API + UI tests), you must have the services running.
 
-**Option 1: Dev Mode (Two Terminals)**
-1.  Start API: `api\.venv\Scripts\Activate.ps1; uvicorn api.main:app --reload`
-2.  Start UI: `cd ui; npm run dev`
-3.  Run Tests: `pytest`
+### Option 1: Dev Mode (Two Terminals)
 
-**Option 2: Integration Mode (Single Port)**
-1.  Build UI: `cd ui; npm run build`
-2.  Start API: `uvicorn api.main:app` (This serves the built UI at port 8000)
-3.  Run Tests: `$env:UI_BASE_URL="http://localhost:8000"; pytest`
+* Start API (Windows): `api\.venv\Scripts\Activate.ps1; uvicorn api.main:app --reload`
+* Start API (Mac): `source api/.venv/bin/activate; uvicorn api.main:app --reload`
+* Start UI: `cd ui; npm run dev`
+* Run Tests: `pytest`
+
+### Option 2: Integration Mode (Single Port)
+
+* Build UI: `cd ui; npm run build`
+* Start API: `uvicorn api.main:app` (This serves the built UI at port 8000)
+* Run Tests:
+  * Windows: `$env:UI_BASE_URL="http://localhost:8000"; pytest`
+  * Mac/Linux: `export UI_BASE_URL="http://localhost:8000"; pytest`
 
 ## Secure
 
