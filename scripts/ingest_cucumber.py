@@ -21,14 +21,21 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
     cells = {}
 
     for feature in features:
+        feature_tags = feature.get('tags', [])
+        
         for element in feature.get('elements', []):
             if element['type'] != 'scenario':
                 continue
             
-            tags = element.get('tags', [])
-            project = get_tag_value(tags, 'vordu:project=')
-            row = get_tag_value(tags, 'vordu:row=')
-            phase = get_tag_value(tags, 'vordu:phase=')
+            element_tags = element.get('tags', [])
+            # Combine tags (Scenario tags take precedence if we scan element_tags first, 
+            # but here we just list them. get_tag_value stops at first match)
+            # We want Scenario to override Feature? Yes.
+            all_tags = element_tags + feature_tags
+            
+            project = get_tag_value(all_tags, 'vordu:project=')
+            row = get_tag_value(all_tags, 'vordu:row=')
+            phase = get_tag_value(all_tags, 'vordu:phase=')
 
             if project and row and phase:
                 key = f"{project}::{row}::{phase}"
@@ -40,7 +47,8 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
                         'scenarios_total': 0,
                         'scenarios_passed': 0,
                         'steps_total': 0,
-                        'steps_passed': 0
+                        'steps_passed': 0,
+                        'details': []
                     }
                 
                 cells[key]['scenarios_total'] += 1
@@ -56,6 +64,33 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
                 is_passed = (step_count > 0) and (step_count == passed_step_count)
                 if is_passed:
                     cells[key]['scenarios_passed'] += 1
+                
+                # Determine scenario status
+                scenario_status = 'passed' if is_passed else 'failed'
+                tag_names = [t['name'] for t in all_tags]
+                if 'wip' in tag_names or '@wip' in tag_names: # Handle both formats just in case
+                    scenario_status = 'pending'
+                elif step_count == 0:
+                     scenario_status = 'skipped'
+
+                # Collect step details
+                step_details = []
+                for step in steps:
+                    step_details.append({
+                        'keyword': step.get('keyword', ''),
+                        'name': step.get('name', ''),
+                        'status': step.get('result', {}).get('status', 'undefined')
+                    })
+
+                cells[key]['details'].append({
+                    'feature': feature.get('name', 'Unknown'),
+                    'scenario': element['name'],
+                    'status': scenario_status,
+                    'passed_steps': passed_step_count,
+                    'total_steps': step_count,
+                    'steps': step_details,
+                    'tag': ' '.join(tag_names)
+                })
 
     # Convert to IngestItem format
     for key, data in cells.items():
@@ -78,7 +113,9 @@ def parse_cucumber_json(file_path: str) -> List[Dict]:
             "scenarios_total": data['scenarios_total'],
             "scenarios_passed": data['scenarios_passed'],
             "steps_total": data['steps_total'],
-            "steps_passed": data['steps_passed']
+            "steps_total": data['steps_total'],
+            "steps_passed": data['steps_passed'],
+            "details": data['details']
         })
 
     return ingest_items

@@ -1,3 +1,4 @@
+@vordu:project=vordu @vordu:row=vordu-web
 Feature: Vörðu Frontend
     As a user
     I want to view the project matrix and details
@@ -15,14 +16,16 @@ Feature: Vörðu Frontend
         Given the Vörðu UI is running
         When I click on a status cell
         Then the BDD Overlay should appear
-        And I should see "Verified Features"
+        And I should see "Vörðu Frontend"
 
-    @vordu:phase=2 @wip
-    Scenario: User clicks item on the BDD Overlay
+    @vordu:phase=2
+    Scenario: User expands a scenario row
         Given the Vörðu UI is running
         And the BDD Overlay is open
-        When I click an item on the BDD Overlay
-        Then the BDD Overlay should expand to show the Scenario Steps
+        When I click the expand button on a scenario row
+        Then the row should expand highlighting the test steps
+        And I should see the "GitHub" icon in the icon bar
+        And I should see the "Jenkins" icon in the icon bar
 
     @vordu:phase=3 @wip
     Scenario: User clicks "create issue" on an item on the BDD Overlay

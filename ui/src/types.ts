@@ -5,6 +5,13 @@ export interface ScenarioDetail {
     passed_steps: number;
     total_steps: number;
     tag?: string;
+    steps?: StepDetail[];
+}
+
+export interface StepDetail {
+    keyword: string;
+    name: string;
+    status: string;
 }
 
 export interface MatrixCellData {

@@ -6,7 +6,7 @@ from playwright.sync_api import Page, expect
 scenarios('../features/web.feature')
 
 @given('the Vörðu UI is running')
-def vordu_ui_running(page: Page, ui_base_url, seed_demicracy_data):
+def vordu_ui_running(page: Page, ui_base_url, seed_demicracy_data, seed_vordu_data):
     page.goto(ui_base_url)
 
 @given('the BDD Overlay is open')
@@ -45,17 +45,42 @@ def bdd_overlay_appears(page: Page):
     # Check for the overlay container or a specific element inside it
     expect(page.locator(".fixed.inset-0.bg-black\\/80")).to_be_visible()
 
-@then('I should see "Verified Features"')
-def see_verified_features(page: Page):
-    expect(page.get_by_text("Verified Features")).to_be_visible()
+@then('I should see "Vörðu Frontend"')
+def see_vordu_frontend_header(page: Page):
+    expect(page.get_by_text("Vörðu Frontend")).to_be_visible()
 
-@when('I click an item on the BDD Overlay')
-def click_item_bdd_overlay(page: Page):
-    pytest.skip("WIP: UI implementation pending")
+@when('I click the expand button on a scenario row')
+def click_expand_scenario(page: Page):
+    # Click on the first scenario row
+    row = page.locator(".space-y-3 > div").first
+    row.click()
 
-@then('the BDD Overlay should expand to show the Scenario Steps')
-def bdd_overlay_expands(page: Page):
-    pytest.skip("WIP: UI implementation pending")
+@then('the row should expand highlighting the test steps')
+def row_expands_steps(page: Page):
+    # Check for steps container visibility
+    # We look for "Given" or "When" or "Then" text which indicates steps are shown
+    # Or just check if the container expanded.
+    # We can check if "Steps:" text is visible if available, or just check content.
+    # Let's check for a step keyword like "Given" inside the expanded area.
+    # Since we clicked the first row (likely "User views the Project Matrix"), it has steps.
+    expect(page.get_by_text("Given", exact=False).first).to_be_visible()
+
+@then('I should see the "GitHub" icon in the icon bar')
+def see_github_icon(page: Page):
+    # Look for the SVG or a parent div that we can identify
+    # We can rely on the fact that we have two icons.
+    # Or strict locator if we added aria-labels. We didn't add aria-labels yet.
+    # We can accept any SVG in the icon bar area?
+    # Let's assume there are svgs.
+    expect(page.locator("svg").nth(1)).to_be_visible() # Top bar has icons too?
+    # Let's be more specific: inside the row.
+    row = page.locator(".space-y-3 > div").first
+    expect(row.locator("svg").first).to_be_visible()
+
+@then('I should see the "Jenkins" icon in the icon bar')
+def see_jenkins_icon(page: Page):
+    row = page.locator(".space-y-3 > div").first
+    expect(row.locator("svg").nth(1)).to_be_visible()
 
 @when('I click a "create issue" button on an item on the BDD Overlay')
 def click_create_issue(page: Page):

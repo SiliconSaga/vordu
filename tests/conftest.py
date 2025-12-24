@@ -146,3 +146,49 @@ def pytest_bdd_apply_tag(tag, function):
         return True
             
     return None
+
+@pytest.fixture
+def seed_vordu_data(api_base_url):
+    """Seeds the Vordu project configuration."""
+    payload = {
+        "system": {
+            "name": "vordu",
+            "label": "Vordu",
+            "description": "Living Roadmap",
+            "domain": "Meta"
+        },
+        "components": [
+            {"name": "vordu-web", "label": "Web", "system": "vordu"},
+            {"name": "vordu-api", "label": "API", "system": "vordu"}
+        ]
+    }
+    requests.post(f"{api_base_url}/config/ingest", json=payload, headers={"X-API-Key": "dev-key"})
+    
+    # Seed mock status
+    status_payload = [
+        # Phase 0: 100%
+        {
+            "project_name": "vordu",
+            "row_id": "vordu-web",
+            "phase_id": 0,
+            "status": "pass",
+            "completion": 100,
+            "scenarios_total": 2,
+            "scenarios_passed": 2,
+            "steps_total": 4,
+            "steps_passed": 4
+        },
+        # Phase 1: 50% (Target)
+        {
+            "project_name": "vordu",
+            "row_id": "vordu-web",
+            "phase_id": 1,
+            "status": "pending",
+            "completion": 50,
+            "scenarios_total": 2,
+            "scenarios_passed": 1,
+            "steps_total": 10,
+            "steps_passed": 5
+        }
+    ]
+    requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})

@@ -147,7 +147,8 @@ def build_status_payload(vordu_data, test_results):
                 "status": status,
                 "passed_steps": r_passed,
                 "total_steps": r_total,
-                "tag": tag_str
+                "tag": tag_str,
+                "steps": result.get('steps', []) # Add steps key
             }
             
             status_map[key].append(detail_item)
@@ -343,13 +344,23 @@ def parse_cucumber_json(file_path):
                 status = "pending"
                 total_steps = 0
                 
+            # Collect step details
+            step_details = []
+            for s in steps:
+                step_details.append({
+                    "keyword": s.get('keyword', ''),
+                    "name": s.get('name', ''),
+                    "status": s.get('result', {}).get('status', 'undefined')
+                })
+
             results.append({
                 "feature": feature_name,
                 "name": scenario_name,
                 "tag": tag_str,
                 "status": status,
                 "total_steps": total_steps,
-                "passed_steps": passed_steps
+                "passed_steps": passed_steps,
+                "steps": step_details # Store detailed steps
             })
             
     return results
@@ -424,6 +435,7 @@ def main():
              merged_item['status'] = result['status']
              merged_item['total_steps'] = result['total_steps']
              merged_item['passed_steps'] = result['passed_steps']
+             merged_item['steps'] = result.get('steps', []) # Fix: Copy steps to merged item
              
              merged_results.append(merged_item)
              # Mark as used
