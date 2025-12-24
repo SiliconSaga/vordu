@@ -18,7 +18,7 @@ Feature: Vörðu Frontend
         Then the BDD Overlay should appear
         And I should see "Vörðu Frontend"
 
-    @vordu:phase=2
+    @vordu:phase=1
     Scenario: User expands a scenario row
         Given the Vörðu UI is running
         And the BDD Overlay is open

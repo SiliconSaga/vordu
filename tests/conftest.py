@@ -188,7 +188,23 @@ def seed_vordu_data(api_base_url):
             "scenarios_total": 2,
             "scenarios_passed": 1,
             "steps_total": 10,
-            "steps_passed": 5
+            "steps_passed": 5,
+            "details": [
+                {
+                    "feature": "Vörðu Frontend",
+                    "scenario": "User expands a scenario row",
+                    "status": "pending",
+                    "passed_steps": 2,
+                    "total_steps": 4,
+                    "steps": [
+                        {"keyword": "Given", "name": "the Vörðu UI is running", "status": "passed"},
+                        {"keyword": "And", "name": "the BDD Overlay is open", "status": "passed"},
+                        {"keyword": "When", "name": "I click the expand button on a scenario row", "status": "failed"},
+                        {"keyword": "Then", "name": "the row should expand highlighting the test steps", "status": "skipped"}
+                    ],
+                    "tag": "vordu:phase=1 vordu:project=vordu vordu:row=vordu-web"
+                }
+            ]
         }
     ]
     requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})
