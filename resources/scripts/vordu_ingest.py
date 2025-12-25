@@ -524,6 +524,8 @@ def scan_feature_files(root_dir, system_info):
             
         current_tags = []
         current_feature_name = "Unknown Feature"
+        current_scenario = None
+        current_feature_tags = []
         
         for line in lines:
             line = line.strip()
@@ -539,14 +541,15 @@ def scan_feature_files(root_dir, system_info):
                  parts = line.split(':', 1)
                  if len(parts) > 1:
                      current_feature_name = parts[1].strip()
-                 current_tags = [] # Reset tags
+                 current_feature_tags = list(current_tags) # Capture feature tags
+                 current_tags = [] # Reset tags specifically for next element (Background/Rule/Scenario)
             elif line.startswith('Scenario:') or line.startswith('Scenario Outline:'):
                 # Found a Scenario
                 parts = line.split(':', 1)
                 scenario_name = parts[1].strip() if len(parts) > 1 else "Unknown"
 
                 # Determine Tags
-                final_tags = list(current_tags)
+                final_tags = list(current_feature_tags) + list(current_tags)
                 tag_str = " ".join(final_tags)
                 
                 # Check if explicit row tag exists
@@ -557,20 +560,41 @@ def scan_feature_files(root_dir, system_info):
                     # We inject it into the tag string so build_status_payload can parse it
                     tag_str += f" @component:{convention_comp}"
                 
-                scanned_items.append({
+                # Prepare for next scenario but also capture this one
+                if current_scenario:
+                     scanned_items.append(current_scenario)
+                
+                current_scenario = {
                     "feature": current_feature_name,
                     "name": scenario_name,
                     "tag": tag_str,
-                    "status": "pending", # Default to pending/planned
-                    "total_steps": 0,    # 0 indicates purely planned (not executed)
-                    "passed_steps": 0
-                })
+                    "status": "pending",
+                    "total_steps": 0,
+                    "passed_steps": 0,
+                    "steps": []
+                }
                 
                 current_tags = [] # Reset for next scenario
             elif line.startswith('#'):
                  pass
+            elif any(line.startswith(k) for k in ['Given', 'When', 'Then', 'And', 'But']) and current_scenario:
+                 # It is a step
+                 parts = line.split(maxsplit=1)
+                 keyword = parts[0]
+                 name = parts[1] if len(parts) > 1 else ""
+                 
+                 current_scenario['steps'].append({
+                     "keyword": keyword,
+                     "name": name,
+                     "status": "pending"
+                 })
+                 current_scenario['total_steps'] += 1
             else:
                  pass
+                 
+    # Append the last found scenario
+    if current_scenario:
+        scanned_items.append(current_scenario)
                  
     return scanned_items
 

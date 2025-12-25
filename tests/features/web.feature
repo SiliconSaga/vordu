@@ -9,7 +9,7 @@ Feature: Vörðu Frontend
         Given the Vörðu UI is running
         When I visit the home page
         Then I should see the "VÖRÐU" header
-        And I should see the "Demicracy" project row
+        And I should see the "Vordu" project row
 
     @vordu:phase=1
     Scenario: User opens BDD Overlay

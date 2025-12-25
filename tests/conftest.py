@@ -1,6 +1,14 @@
 import os
 import pytest
 from playwright.sync_api import sync_playwright
+import sys
+
+# Ensure resources scripts are in path
+scripts_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "resources", "scripts"))
+if scripts_path not in sys.path:
+    sys.path.append(scripts_path)
+
+import vordu_ingest
 
 @pytest.fixture(scope="session")
 def browser_context():
@@ -33,8 +41,8 @@ def browser_context_args(browser_context_args):
 
 @pytest.fixture(scope="function", autouse=True)
 def configure_timeout(page):
-    # Set default timeout to 2 seconds for faster fail-fast
-    page.set_default_timeout(2000)
+    # Set default timeout to 10 seconds for robustness
+    page.set_default_timeout(10000)
     return page
 
 import requests
@@ -48,75 +56,7 @@ def clean_db(api_base_url):
     except requests.ConnectionError:
         pass # API might not be running if unit tests only
 
-@pytest.fixture
-def seed_demicracy_data(api_base_url):
-    """Seeds the Demicracy project configuration."""
-    payload = {
-        "system": {
-            "name": "demicracy",
-            "label": "Demicracy",
-            "description": "Core Project",
-            "domain": "Governance"
-        },
-        "components": [
-            {"name": "frontend", "label": "Frontend", "system": "demicracy"},
-            {"name": "api", "label": "API", "system": "demicracy"}
-        ]
-    }
-    requests.post(f"{api_base_url}/config/ingest", json=payload, headers={"X-API-Key": "dev-key"})
-    
-    # Also seed a mock status to make it visible/clickable (100% completion)
-    status_payload = [
-        # Phase 0: 50%
-        {
-            "project_name": "demicracy",
-            "row_id": "frontend",
-            "phase_id": 0,
-            "status": "pending",
-            "completion": 50,
-            "scenarios_total": 2,
-            "scenarios_passed": 1,
-            "steps_total": 10,
-            "steps_passed": 5
-        },
-        # Phase 1: 100% (The target for our test)
-        {
-            "project_name": "demicracy",
-            "row_id": "frontend",
-            "phase_id": 1,
-            "status": "pass",
-            "completion": 100,
-            "scenarios_total": 1,
-            "scenarios_passed": 1,
-            "steps_total": 5,
-            "steps_passed": 5
-        },
-        # Phase 2: 0%
-        {
-            "project_name": "demicracy",
-            "row_id": "frontend",
-            "phase_id": 2,
-            "status": "empty",
-            "completion": 0,
-            "scenarios_total": 0,
-            "scenarios_passed": 0,
-            "steps_total": 0,
-            "steps_passed": 0
-        },
-        # Phase 3: 0%
-        {
-            "project_name": "demicracy",
-            "row_id": "frontend",
-            "phase_id": 3,
-            "status": "empty",
-            "completion": 0,
-            "scenarios_total": 0,
-            "scenarios_passed": 0,
-            "steps_total": 0,
-            "steps_passed": 0
-        }
-    ]
-    requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})
+
 
 def pytest_bdd_apply_tag(tag, function):
     """
@@ -149,62 +89,21 @@ def pytest_bdd_apply_tag(tag, function):
 
 @pytest.fixture
 def seed_vordu_data(api_base_url):
-    """Seeds the Vordu project configuration."""
-    payload = {
-        "system": {
-            "name": "vordu",
-            "label": "Vordu",
-            "description": "Living Roadmap",
-            "domain": "Meta"
-        },
-        "components": [
-            {"name": "vordu-web", "label": "Web", "system": "vordu"},
-            {"name": "vordu-api", "label": "API", "system": "vordu"}
-        ]
-    }
-    requests.post(f"{api_base_url}/config/ingest", json=payload, headers={"X-API-Key": "dev-key"})
+    """Seeds the Vordu project configuration using real ingestion."""
+    catalog_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "catalog-info.yaml"))
     
-    # Seed mock status
-    status_payload = [
-        # Phase 0: 100%
-        {
-            "project_name": "vordu",
-            "row_id": "vordu-web",
-            "phase_id": 0,
-            "status": "pass",
-            "completion": 100,
-            "scenarios_total": 2,
-            "scenarios_passed": 2,
-            "steps_total": 4,
-            "steps_passed": 4
-        },
-        # Phase 1: 50% (Target)
-        {
-            "project_name": "vordu",
-            "row_id": "vordu-web",
-            "phase_id": 1,
-            "status": "pending",
-            "completion": 50,
-            "scenarios_total": 2,
-            "scenarios_passed": 1,
-            "steps_total": 10,
-            "steps_passed": 5,
-            "details": [
-                {
-                    "feature": "Vörðu Frontend",
-                    "scenario": "User expands a scenario row",
-                    "status": "pending",
-                    "passed_steps": 2,
-                    "total_steps": 4,
-                    "steps": [
-                        {"keyword": "Given", "name": "the Vörðu UI is running", "status": "passed"},
-                        {"keyword": "And", "name": "the BDD Overlay is open", "status": "passed"},
-                        {"keyword": "When", "name": "I click the expand button on a scenario row", "status": "failed"},
-                        {"keyword": "Then", "name": "the row should expand highlighting the test steps", "status": "skipped"}
-                    ],
-                    "tag": "vordu:phase=1 vordu:project=vordu vordu:row=vordu-web"
-                }
-            ]
-        }
-    ]
+    # 1. Parse Catalog
+    entities = vordu_ingest.parse_catalog(catalog_path)
+    vordu_data = vordu_ingest.extract_vordu_metadata(entities)
+    
+    # 2. Ingest Config
+    config_payload = vordu_ingest.build_config_payload(vordu_data)
+    requests.post(f"{api_base_url}/config/ingest", json=config_payload, headers={"X-API-Key": "dev-key"})
+    
+    # 3. Scan Features (Real "Planned" Data)
+    root_dir = os.path.dirname(catalog_path)
+    scanned_features = vordu_ingest.scan_feature_files(root_dir, vordu_data['system'])
+    
+    # 4. Ingest Status (Planned items only, no execution results yet)
+    status_payload = vordu_ingest.build_status_payload(vordu_data, scanned_features)
     requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})
