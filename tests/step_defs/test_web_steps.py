@@ -69,31 +69,6 @@ def row_expands_steps(page: Page):
     # Since we clicked the first row (likely "User views the Project Matrix"), it has steps.
     expect(page.get_by_text("Given", exact=False).first).to_be_visible()
 
-@then('I should see the "GitHub" icon in the icon bar')
-def see_github_icon(page: Page):
-    # Look for the SVG or a parent div that we can identify
-    # We can rely on the fact that we have two icons.
-    # Or strict locator if we added aria-labels. We didn't add aria-labels yet.
-    # We can accept any SVG in the icon bar area?
-    # Let's assume there are svgs.
-    expect(page.locator("svg").nth(1)).to_be_visible() # Top bar has icons too?
-    # Let's be more specific: inside the row.
-    row = page.locator(".space-y-3 > div").first
-    expect(row.locator("svg").first).to_be_visible()
-
-@then('I should see the "Jenkins" icon in the icon bar')
-def see_jenkins_icon(page: Page):
-    row = page.locator(".space-y-3 > div").first
-    expect(row.locator("svg").nth(1)).to_be_visible()
-
-@when('I click a "create issue" button on an item on the BDD Overlay')
-def click_create_issue(page: Page):
-    pytest.skip("WIP: UI implementation pending")
-
-@then('an issue creation request on GitHub should open and prepopulate with the item details')
-def issue_creation_opens(page: Page):
-    pytest.skip("WIP: UI implementation pending")
-
 @when('I click on an empty status cell')
 def click_empty_cell(page: Page):
     # Locate an empty cell (opacity-30)

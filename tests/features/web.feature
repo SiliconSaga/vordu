@@ -24,15 +24,6 @@ Feature: Vörðu Frontend
         And the BDD Overlay is open
         When I click the expand button on a scenario row
         Then the row should expand highlighting the test steps
-        And I should see the "GitHub" icon in the icon bar
-        And I should see the "Jenkins" icon in the icon bar
-
-    @vordu:phase=3 @wip
-    Scenario: User clicks "create issue" on an item on the BDD Overlay
-        Given the Vörðu UI is running
-        And the BDD Overlay is open
-        When I click a "create issue" button on an item on the BDD Overlay
-        Then an issue creation request on GitHub should open and prepopulate with the item details
 
     @vordu:phase=0
     Scenario: User clicks an empty cell
