@@ -71,7 +71,7 @@ graph TD
     Git[Git Push] --> Jenkins[Jenkins CI]
     Jenkins -->|POST Status| VorduAPI[Vörðu Backend]
     Jenkins -->|Run Tests| TestRunner[Cucumber JSON]
-    VorduAPI <--> |Data Store| VorduDB[(Vörðu DB)]
+    VorduAPI <--> |Data Store| VorduDB[(Vörðu Data)]
     VorduAPI --> |Display Data| VorduFrontend
     VorduAPI -->|Retrieve Status| VorduLogic
     
@@ -84,7 +84,7 @@ graph TD
 ### Components
 
 1. **Configuration (The Catalog)**: Vörðu reads local Backstage catalog files (not Backstage itself - just two systems using the same source files) to understand entity config to build the "Empty Matrix".
-2. **Status (The DB)**: Jenkins pushes test results to `vordu-db` via the Vörðu API.
+2. **Status (The Data)**: Jenkins pushes test results to `vordu-data` via the Vörðu API.
 3. **Visualization (Standalone)**: A standalone Vörðu app merges the Catalog (Structure) with the DB (Color).
 4. **Visualization (The Plugin)**: A custom Backstage plugin merges the Catalog (Structure) with the DB (Color).
 

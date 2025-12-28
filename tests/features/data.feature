@@ -1,4 +1,4 @@
-Feature: Vörðu Database
+Feature: Vörðu Data
     As the system
     I want to persist project data
     So that status is preserved between restarts

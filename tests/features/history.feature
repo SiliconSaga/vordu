@@ -4,7 +4,7 @@ Feature: Roadmap History & Analytics
   I want to track roadmap progress over time
   So that I can visualize trends and velocity
 
-  @component:vordu-db @phase:2 @wip
+  @component:vordu-data @phase:2 @wip
   Scenario: Kafka Event Sourcing for History
     Given the Vörðu ingestion pipeline is configured for "Insert-Only" mode
     When a new build triggers an ingestion event

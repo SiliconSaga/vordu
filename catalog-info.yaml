@@ -47,10 +47,10 @@ spec:
 apiVersion: backstage.io/v1alpha1
 kind: Component
 metadata:
-  name: vordu-db
+  name: vordu-data
   system: vordu
   annotations:
-    vordu.io/row-label: "DB"
+    vordu.io/row-label: "Data"
     github.com/project-slug: siliconsaga/vordu
 spec:
   type: resource
