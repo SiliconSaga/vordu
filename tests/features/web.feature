@@ -31,7 +31,7 @@ Feature: Vörðu Frontend
         When I click on an empty status cell
         Then the BDD Overlay should not appear
 
-    @vordu:phase=2 @wip
+    @vordu:phase=2
     Scenario: User views planned feature details
         Given the Vörðu UI is running
         And the BDD Overlay is open for a "Planned" item

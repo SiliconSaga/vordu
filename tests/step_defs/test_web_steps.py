@@ -6,21 +6,6 @@ import re
 # Automatically bind all scenarios in the feature file
 scenarios('../features/web.feature')
 
-@given('the Vörðu UI is running')
-def vordu_ui_running(page: Page, ui_base_url, seed_vordu_data):
-    page.goto(ui_base_url)
-
-@given('the BDD Overlay is open')
-def open_bdd_overlay(page: Page):
-    # Ensure we are on the page
-    # page.goto(ui_base_url) # handled by previous given
-    # Click status cell to open overlay
-    # Match any "X/Y" pattern (e.g., "0/2", "1/1")
-    cell = page.get_by_text(re.compile(r"\d+/\d+")).first
-    expect(cell).to_be_visible()
-    cell.click()
-    expect(page.locator(".fixed.inset-0.bg-black\\/80")).to_be_visible()
-
 @when('I visit the home page')
 def visit_home_page(page: Page, ui_base_url):
     page.goto(ui_base_url)
@@ -52,23 +37,6 @@ def see_vordu_frontend_header(page: Page):
     # Relax match to avoid encoding issues with "Vörðu" in headless mode
     expect(page.get_by_text("Frontend", exact=False)).to_be_visible()
 
-@when('I click the expand button on a scenario row')
-def click_expand_scenario(page: Page):
-    # Click on the first scenario row
-    row = page.locator(".space-y-3 > div").first
-    row.wait_for(state="visible")
-    row.click()
-
-@then('the row should expand highlighting the test steps')
-def row_expands_steps(page: Page):
-    # Check for steps container visibility
-    # We look for "Given" or "When" or "Then" text which indicates steps are shown
-    # Or just check if the container expanded.
-    # We can check if "Steps:" text is visible if available, or just check content.
-    # Let's check for a step keyword like "Given" inside the expanded area.
-    # Since we clicked the first row (likely "User views the Project Matrix"), it has steps.
-    expect(page.get_by_text("Given", exact=False).first).to_be_visible()
-
 @when('I click on an empty status cell')
 def click_empty_cell(page: Page):
     # Locate an empty cell (opacity-30)
@@ -86,19 +54,8 @@ def bdd_overlay_not_appears(page: Page):
 
 @given('the BDD Overlay is open for a "Planned" item')
 def open_bdd_overlay_planned(page: Page):
-    # Find a Pending cell (Amber/Yellow)
-    # We look for the "⚠" or similar indicator, or color yellow
-    # Using the CSS class or style from MatrixCell
-    # Pending cells have `text-yellow-500` icon or border color?
-    # Actually MatrixCell sets style color.
-    # We can try to find a cell passed but with 0 steps, or just a known pending cell.
-    # Let's try finding a cell that says "pending" if we have aria labels, or by color.
-    # Simplified: Find cell with "⚠" (which is in overlay, not cell). 
-    # The cell just shows X/Y or %.
-    # Planned items (0/0) show "0/0" or "0 scenarios"?
-    # The updated code shows "X/Y scenarios" for planned.
-    # Let's assume we can find one.
-    cell = page.get_by_text("scenarios").first
+    # Planned items show "0/N", so we look for text starting with "0/"
+    cell = page.get_by_text(re.compile(r"^0/\d+")).first
     if cell.is_visible():
         cell.click()
         expect(page.locator(".fixed.inset-0.bg-black\\/80")).to_be_visible()

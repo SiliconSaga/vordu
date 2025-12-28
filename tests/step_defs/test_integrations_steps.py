@@ -5,8 +5,7 @@ from playwright.sync_api import Page, expect
 # Automatically bind all scenarios in the feature file
 scenarios('../features/integrations.feature')
 
-# Import steps from test_web_steps to share "Given the Vörðu UI is running" etc.
-from tests.step_defs.test_web_steps import *
+# Import steps like "Given the Vörðu UI is running" etc are in conftest.py
 
 @then('I should see the "GitHub" icon in the icon bar')
 def see_github_icon(page: Page):

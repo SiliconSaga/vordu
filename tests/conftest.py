@@ -79,12 +79,7 @@ def pytest_bdd_apply_tag(tag, function):
             return True
         except ValueError:
             pass
-    
-    elif tag == "wip":
-        marker = pytest.mark.xfail(reason="Work in Progress (Roadmap Item)")
-        marker(function)
-        return True
-            
+
     return None
 
 @pytest.fixture
@@ -107,3 +102,38 @@ def seed_vordu_data(api_base_url):
     # 4. Ingest Status (Planned items only, no execution results yet)
     status_payload = vordu_ingest.build_status_payload(vordu_data, scanned_features)
     requests.post(f"{api_base_url}/ingest", json=status_payload, headers={"X-API-Key": "dev-key"})
+
+# -----------------------------------------------------------------------------
+# Shared BDD Steps
+# -----------------------------------------------------------------------------
+from pytest_bdd import given, when, then, parsers
+from playwright.sync_api import Page, expect
+import re
+
+@given('the Vörðu UI is running')
+def vordu_ui_running(page: Page, ui_base_url, seed_vordu_data):
+    page.goto(ui_base_url)
+
+@given('the BDD Overlay is open')
+def open_bdd_overlay(page: Page):
+    # Ensure we are on the page
+    # page.goto(ui_base_url) # handled by previous given
+    # Click status cell to open overlay
+    # Match any "X/Y" pattern (e.g., "0/2", "1/1")
+    cell = page.get_by_text(re.compile(r"\d+/\d+")).first
+    expect(cell).to_be_visible()
+    cell.click()
+    expect(page.locator(".fixed.inset-0.bg-black\\/80")).to_be_visible()
+
+@when('I click the expand button on a scenario row')
+def click_expand_scenario(page: Page):
+    # Click on the first scenario row
+    row = page.locator(".space-y-3 > div").first
+    row.wait_for(state="visible")
+    row.click()
+
+@then('the row should expand highlighting the test steps')
+def row_expands_steps(page: Page):
+    # Check for steps container visibility
+    # We look for "Given" or "When" or "Then" text which indicates steps are shown
+    expect(page.get_by_text("Given", exact=False).first).to_be_visible()

@@ -326,11 +326,7 @@ def parse_cucumber_json(file_path):
                 if s.get('result', {}).get('status') == 'passed':
                     passed_steps += 1
             
-            if "wip" in tags or "@wip" in tags or any(t.endswith("wip") for t in tags):
-                 status = "pending"
-                 passed_steps = 0 # Force 0/N completion
-                 total_steps = 0  # Force 0 total steps for WIP to hide counts
-            elif not steps:
+            if not steps:
                 status = "pending"
                 total_steps = 0
             elif any(s.get('result', {}).get('status') == 'failed' for s in steps):
@@ -592,9 +588,9 @@ def scan_feature_files(root_dir, system_info):
             else:
                  pass
                  
-    # Append the last found scenario
-    if current_scenario:
-        scanned_items.append(current_scenario)
+        # Append the last found scenario
+        if current_scenario:
+            scanned_items.append(current_scenario)
                  
     return scanned_items
 
