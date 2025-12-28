@@ -187,7 +187,7 @@ const ScenarioRow = ({ scenario }: { scenario: ScenarioDetail }) => {
                     </div>
                 </div>
 
-                <div className="flex items-center gap-3 bg-gray-900/50 p-2 rounded border border-gray-800">
+                <div className="flex items-center gap-3 bg-gray-600 p-2 rounded border border-gray-800" onClick={(e) => e.stopPropagation()}>
                     <JenkinsIcon />
                     <GitHubIcon />
                     <GitHubCreateIssueIcon />

@@ -11,17 +11,17 @@ from tests.step_defs.test_web_steps import *
 @then('I should see the "GitHub" icon in the icon bar')
 def see_github_icon(page: Page):
     row = page.locator(".space-y-3 > div").first
-    expect(row.get_by_alt_text("See scenario definition on GitHub")).to_be_visible()
+    expect(row.get_by_role("button", name="See scenario definition on GitHub")).to_be_visible()
 
 @then('I should see the "Jenkins" icon in the icon bar')
 def see_jenkins_icon(page: Page):
     row = page.locator(".space-y-3 > div").first
-    expect(row.get_by_alt_text("See scenario results in Jenkins")).to_be_visible()
+    expect(row.get_by_role("button", name="See scenario results in Jenkins")).to_be_visible()
 
 @then('I should see the "GitHub Create Issue" icon in the icon bar')
 def see_github_create_issue_icon(page: Page):
     row = page.locator(".space-y-3 > div").first
-    expect(row.get_by_alt_text("Create an issue for this scenario on GitHub")).to_be_visible()
+    expect(row.get_by_role("button", name="Create an issue for this scenario on GitHub")).to_be_visible()
 
 # New failing steps for integrations.feature
 
