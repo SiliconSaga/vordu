@@ -59,15 +59,50 @@ To run the full suite (API + UI tests), you must have the services running.
 * Start API (Windows): `api\.venv\Scripts\Activate.ps1; uvicorn api.main:app --reload`
 * Start API (Mac): `source api/.venv/bin/activate; uvicorn api.main:app --reload`
 * Start UI: `cd ui; npm run dev`
-* Run Tests: `pytest`
+* Run Tests: `pytest --cucumberjson=cucumber.json` (prepares right file for Vordu-ingesting as well)
 
 ### Option 2: Integration Mode (Single Port)
 
 * Build UI: `cd ui; npm run build`
 * Start API: `uvicorn api.main:app` (This serves the built UI at port 8000)
 * Run Tests:
-  * Windows: `$env:UI_BASE_URL="http://localhost:8000"; pytest`
-  * Mac/Linux: `export UI_BASE_URL="http://localhost:8000"; pytest`
+  * Windows: `$env:UI_BASE_URL="http://localhost:8000"; pytest --cucumberjson=cucumber.json`
+  * Mac/Linux: `export UI_BASE_URL="http://localhost:8000"; pytest --cucumberjson=cucumber.json`
+
+## Maintenance
+
+### Reset Database
+
+Sometimes it is necessary to wipe the database to clear out old or conflicting data (e.g. after a schema change or finding a bug in ingestion).
+
+#### Local
+To wipe the local development database:
+
+1. Stop the API server.
+2. Delete the `vordu.db` file.
+   ```bash
+   rm vordu.db
+   ```
+3. Restart the API server (the database schema will be recreated automatically).
+
+#### Live (Kubernetes)
+To wipe the live database in the `vordu` namespace:
+
+1. Identify the running pod:
+   ```powershell
+   $pod = (kubectl get pods -n vordu -l app=vordu -o jsonpath="{.items[0].metadata.name}")
+   ```
+   *(Or on Bash: `POD=$(kubectl get pods -n vordu -l app=vordu -o jsonpath="{.items[0].metadata.name}")`)*
+
+2. Delete the database file inside the pod:
+   ```bash
+   kubectl exec -n vordu $pod -- rm /data/vordu.db
+   ```
+
+3. Restart the pod to re-initialize the schema:
+   ```bash
+   kubectl delete pod $pod -n vordu
+   ```
 
 ## Secure
 
@@ -147,24 +182,24 @@ python resources/scripts/vordu_ingest.py catalog-info.yaml --report cucumber.jso
 
 ## Feature File Tagging & Conventions
 
-Vörðu relies on associating BDD scenarios with specific Roadmap components. To minimize maintenance overhead, the ingestion pipeline uses a "Convention over Configuration" approach to deduce which component a feature file belongs to.
+Vörðu relies on associating BDD scenarios with specific Roadmap components and phases (like `@vordu:phase=2`). To minimize maintenance overhead, the ingestion pipeline uses a "Convention over Configuration" approach to deduce which component a feature file belongs to.
 
-### Priority Resolution Logic
+### Status Icons
+
+The Vörðu UI uses the following icons to represent scenario status:
+
+- **✔** (Green): **Passed** - All steps executed successfully.
+- **☐** (Gray/White): **Planned** - Scenario is planned or has undefined steps. 
+- **✘** (Red): **Failed** - One or more steps failed execution.
+- **/** (Gray): **Skipped** - All steps were skipped (e.g. manually disabled).
+
+### Component Inference
 
 The system resolves the target component for a feature file using the following priority order (highest to lowest):
 
 | Priority | Convention Source | Pattern | Example | Logic |
-| :--- | :--- | :--- | :--- | :--- |
-| **1** | **Explicit Tag** | `@vordu:row=X` | `@vordu:row=vordu-api` | **Always wins.** Use this to override conventions. |
-| **2** | **Subdirectory** | `features/<name>/*.feature` | `features/api/users.feature` | `<name>` is appended to the System Name (e.g. `vordu-api`). |
-| **3** | **Filename** | `features/<name>.feature` | `features/api.feature` | `<name>` is appended to the System Name (e.g. `vordu-api`). |
-| **4** | **System Default** | Root `*.feature` | `features/history.feature` | Defaults to System Row (if supported) or requires System Tag. |
-
-### Other Tags
-
-*   **`@wip`**: Marks a scenario as "Work In Progress".
-    *   **Behavior**:
-        *   Status is forced to **Pending**.
-        *   Step counts are hidden (treated as **Planned/0 steps**).
-        *   Useful for planning future work without polluting the "Failed" metrics.
-*   **`@vordu:phase=N`**: Explicitly assigns a scenario to a Roadmap Phase (0-3).
+| :------- | :----------------- | :-------------------------- | :--------------------------- | :------------------------------------------------------------ |
+| **1**    | Explicit Tag       | `@vordu:row=X`              | `@vordu:row=vordu-api`       | **Always wins.** Use this to override conventions.            |
+| **2**    | Subdirectory       | `features/<name>/*.feature` | `features/api/users.feature` | `<name>` is appended to the System Name (e.g. `vordu-api`).   |
+| **3**    | Filename           | `features/<name>.feature`   | `features/api.feature`       | `<name>` is appended to the System Name (e.g. `vordu-api`).   |
+| **4**    | Single Component   | Root `*.feature`            | `features/user.feature`      | If system has only ONE component, defaults to that component. |

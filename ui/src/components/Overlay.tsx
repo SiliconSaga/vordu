@@ -56,6 +56,14 @@ export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
                                 </button>
                             </div>
 
+                            {/* Legend */}
+                            <div className="flex gap-6 text-xs font-mono border-b border-gray-800 bg-black/40 py-2 justify-center select-none">
+                                <span className="flex items-center gap-1.5"><span className="text-neon-green">✔</span> Passed</span>
+                                <span className="flex items-center gap-1.5"><span className="text-red-500">✘</span> Failed</span>
+                                <span className="flex items-center gap-1.5"><span className="text-gray-300">☐</span> Planned</span>
+                                <span className="flex items-center gap-1.5"><span className="text-gray-500">/</span> Skipped</span>
+                            </div>
+
                             {/* Content - Scrollable */}
                             <div className="flex-grow overflow-y-auto p-8">
                                 <div className="max-w-4xl mx-auto space-y-8">
@@ -97,9 +105,10 @@ const StatusIcon = ({ status }: { status: string }) => {
         case 'passed': return <span className="text-neon-green">✔</span>;
         case 'failed': return <span className="text-red-500">✘</span>;
         case 'pending':
-        case 'skipped':
         case 'undefined':
-            return <span className="text-yellow-500">⚠</span>;
+            return <span className="text-gray-300">☐</span>;
+        case 'skipped':
+            return <span className="text-gray-500">/</span>;
         default: return <span className="text-gray-500">?</span>;
     }
 };
@@ -179,8 +188,8 @@ const ScenarioRow = ({ scenario }: { scenario: ScenarioDetail }) => {
                                 <span>Steps: {scenario.passed_steps}/{scenario.total_steps}</span>
                             )}
                             {(scenario.status === 'pending' || scenario.status === 'skipped') && scenario.total_steps > 0 &&
-                                <span className="ml-2 text-yellow-600/70 italic">
-                                    (Planned / Not Implemented)
+                                <span className="ml-2 text-gray-500 italic">
+                                    (Planned)
                                 </span>
                             }
                         </p>
