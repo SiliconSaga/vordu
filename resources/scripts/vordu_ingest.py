@@ -42,6 +42,7 @@ def extract_vordu_metadata(entities):
         
         # Look for Vörðu annotations
         row_label = annotations.get('vordu.io/row-label')
+        repo_slug = annotations.get('github.com/project-slug')
         
         if kind == 'System':
             data['system'] = {
@@ -50,7 +51,8 @@ def extract_vordu_metadata(entities):
                 "row_label": row_label or name, # Specific label for the Section Row
                 "description": meta.get('description'),
                 "domain": spec.get('domain'),
-                "granularity": annotations.get('vordu.io/granularity', 'component') 
+                "granularity": annotations.get('vordu.io/granularity', 'component'),
+                "repo_slug": repo_slug
             }
         elif kind == 'Component':
             component_data = {
@@ -68,12 +70,36 @@ def extract_vordu_metadata(entities):
 def mock_bdd_results():
     """Returns mock BDD data."""
     return [
-        {"feature": "Vörðu API", "name": "Ingest Cucumber JSON", "tag": "@component:vordu-api @phase:1", "status": "passed"},
-        {"feature": "Autoboros Agent", "name": "Spawn Agent", "tag": "@component:autoboros-agent @phase:1", "status": "failed"},
+        {
+            "feature": "Vörðu API",
+            "name": "Ingest Cucumber JSON",
+            "tag": "@component:vordu-api @phase:1",
+            "status": "passed",
+            "passed_steps": 5,
+            "total_steps": 5,
+            "steps": []
+        },
+        {
+            "feature": "Autoboros Agent",
+            "name": "Spawn Agent",
+            "tag": "@component:autoboros-agent @phase:1",
+            "status": "failed",
+            "passed_steps": 2,
+            "total_steps": 5,
+            "steps": []
+        },
         
         # Mimir Data mocks left simple for now as they are checked via logic usually
         # But should be updated if used heavily. For now, just fix structure to avoid crash.
-        {"feature": "Mimir", "name": "Kafka Test", "tag": "@component:mimir-kafka @phase:0", "status": "passed"},
+        {
+            "feature": "Mimir",
+            "name": "Kafka Test",
+            "tag": "@component:mimir-kafka @phase:0",
+            "status": "passed",
+            "passed_steps": 3,
+            "total_steps": 3,
+            "steps": []
+        },
     ]
 
 def build_config_payload(vordu_data):
@@ -148,7 +174,8 @@ def build_status_payload(vordu_data, test_results):
                 "passed_steps": r_passed,
                 "total_steps": r_total,
                 "tag": tag_str,
-                "steps": result.get('steps', []) # Add steps key
+                "steps": result.get('steps', []), # Add steps key
+                "feature_file": result.get('feature_file')
             }
             
             status_map[key].append(detail_item)
@@ -298,6 +325,7 @@ def parse_cucumber_json(file_path):
     
     for feature in features:
         feature_name = feature.get('name', 'Unknown Feature')
+        feature_uri = feature.get('uri') # Extract URI
         
         for element in feature.get('elements', []):
             if element['type'] != 'scenario':
@@ -356,7 +384,8 @@ def parse_cucumber_json(file_path):
                 "status": status,
                 "total_steps": total_steps,
                 "passed_steps": passed_steps,
-                "steps": step_details # Store detailed steps
+                "steps": step_details, # Store detailed steps
+                "feature_file": feature_uri
             })
             
     return results
@@ -433,6 +462,10 @@ def main():
              merged_item['passed_steps'] = result['passed_steps']
              merged_item['steps'] = result.get('steps', []) # Fix: Copy steps to merged item
              
+             # Prefer URI from report if available, else scan path
+             if result.get('feature_file'):
+                 merged_item['feature_file'] = result.get('feature_file')
+
              merged_results.append(merged_item)
              # Mark as used
              del result_map[key]
@@ -515,6 +548,9 @@ def scan_feature_files(root_dir, system_info):
         # Determine Convention Component
         convention_comp = deduce_component_from_path(file_path, system_name)
         
+        # Calculate relative path for storage
+        rel_path = os.path.relpath(file_path, root_dir).replace('\\', '/')
+
         with open(file_path, 'r', encoding='utf-8') as f:
             lines = f.readlines()
             
@@ -567,7 +603,8 @@ def scan_feature_files(root_dir, system_info):
                     "status": "pending",
                     "total_steps": 0,
                     "passed_steps": 0,
-                    "steps": []
+                    "steps": [],
+                    "feature_file": rel_path
                 }
                 
                 current_tags = [] # Reset for next scenario

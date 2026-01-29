@@ -7,9 +7,10 @@ interface OverlayProps {
     onClose: () => void;
     data: OverlayData | null;
     color: string;
+    repoSlug?: string;
 }
 
-export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
+export const Overlay = ({ isOpen, onClose, data, color, repoSlug }: OverlayProps) => {
     if (!data) return null;
 
     return (
@@ -83,7 +84,7 @@ export const Overlay = ({ isOpen, onClose, data, color }: OverlayProps) => {
 
                                             <div className="space-y-3">
                                                 {scenarios.map((scen, idx) => (
-                                                    <ScenarioRow key={idx} scenario={scen} />
+                                                    <ScenarioRow key={idx} scenario={scen} repoSlug={repoSlug} />
                                                 ))}
                                             </div>
                                         </div>
@@ -124,7 +125,7 @@ const groupByFeature = (details: ScenarioDetail[]) => {
     }, {} as Record<string, ScenarioDetail[]>);
 };
 
-const ScenarioRow = ({ scenario }: { scenario: ScenarioDetail }) => {
+const ScenarioRow = ({ scenario, repoSlug }: { scenario: ScenarioDetail, repoSlug?: string }) => {
     const [isExpanded, setIsExpanded] = useState(false);
 
     // Icons
@@ -145,10 +146,20 @@ const ScenarioRow = ({ scenario }: { scenario: ScenarioDetail }) => {
 
     const GitHubIcon = () => (
         <button
-            onClick={(e) => { e.stopPropagation(); /* TODO: Link */ }}
-            className="hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/50 rounded"
+            onClick={(e) => {
+                e.stopPropagation();
+                if (repoSlug) {
+                    let url = `https://github.com/${repoSlug}/tree/main/features`;
+                    if (scenario.feature_file) {
+                        url = `https://github.com/${repoSlug}/blob/main/${scenario.feature_file}`;
+                    }
+                    window.open(url, '_blank');
+                }
+            }}
+            className={`hover:opacity-80 transition-opacity focus:outline-none focus:ring-2 focus:ring-white/50 rounded ${!repoSlug ? 'opacity-50 cursor-not-allowed' : ''}`}
             aria-label="See scenario definition on GitHub"
-            title="See scenario definition on GitHub"
+            title={repoSlug ? "See scenario definition on GitHub" : "GitHub repository not configured"}
+            disabled={!repoSlug}
         >
             <img
                 src="/GitHub.png"

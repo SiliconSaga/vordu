@@ -6,6 +6,7 @@ export interface ScenarioDetail {
     total_steps: number;
     tag?: string;
     steps?: StepDetail[];
+    feature_file?: string;
 }
 
 export interface StepDetail {
@@ -31,4 +32,16 @@ export interface MatrixCellData {
 
 export interface OverlayData extends MatrixCellData {
     color?: string;
+}
+
+export interface RowConfig {
+  id: string;
+  label: string;
+}
+
+export interface ProjectConfig {
+  id: string;
+  name: string;
+  repo_slug?: string;
+  rows: RowConfig[];
 }

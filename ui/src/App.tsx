@@ -4,7 +4,7 @@ import { TopBar } from './components/TopBar';
 import { Overlay } from './components/Overlay';
 import { generateNeonColor } from './utils/colors';
 import './App.css';
-import type { MatrixCellData, OverlayData } from './types';
+import type { MatrixCellData, OverlayData, ProjectConfig } from './types';
 
 // Hardcoded Phases for MVP (Configurable later via Domain entity)
 const PHASES = [
@@ -13,17 +13,6 @@ const PHASES = [
   { id: 2, label: "Federation" },
   { id: 3, label: "Sovereignty" },
 ];
-
-interface RowConfig {
-  id: string;
-  label: string;
-}
-
-interface ProjectConfig {
-  id: string;
-  name: string;
-  rows: RowConfig[];
-}
 
 function App() {
   const [matrixState, setMatrixState] = useState<MatrixCellData[]>([]);
@@ -75,6 +64,7 @@ function App() {
         onClose={() => setSelectedCell(null)}
         data={selectedCell}
         color={selectedCell?.color || '#fff'}
+        repoSlug={selectedCell ? projectConfig.find(p => p.id === selectedCell.project)?.repo_slug : undefined}
       />
 
       {/* Legend */}
