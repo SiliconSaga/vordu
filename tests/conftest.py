@@ -11,16 +11,23 @@ if scripts_path not in sys.path:
 import vordu_ingest
 
 @pytest.fixture(scope="session")
-def browser_context():
+def browser_context_session():
+    print("DEBUG: Creating browser context session")
     with sync_playwright() as p:
         browser = p.chromium.launch(headless=True)
         context = browser.new_context()
+        print(f"DEBUG: Context created: {context}, type: {type(context)}")
         yield context
         browser.close()
 
 @pytest.fixture(scope="function")
-def page(browser_context):
-    page = browser_context.new_page()
+def page(browser_context_session):
+    print(f"DEBUG: page fixture called with context: {browser_context_session}, type: {type(browser_context_session)}")
+    # Explicitly check if new_page is callable
+    if not callable(browser_context_session.new_page):
+         print(f"DEBUG: new_page is NOT callable! It is: {browser_context_session.new_page}")
+
+    page = browser_context_session.new_page()
     yield page
     page.close()
 
@@ -32,12 +39,6 @@ def api_base_url():
 def ui_base_url():
     return os.getenv("UI_BASE_URL", "http://localhost:5173") # Better for local dev
 
-@pytest.fixture(scope="session")
-def browser_context_args(browser_context_args):
-    return {
-        **browser_context_args,
-        "viewport": {"width": 1280, "height": 720},
-    }
 
 @pytest.fixture(scope="function", autouse=True)
 def configure_timeout(page):
