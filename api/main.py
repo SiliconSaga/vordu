@@ -92,6 +92,7 @@ class SystemConfig(BaseModel):
     label: str
     description: str | None = None
     domain: str | None = None
+    repo_slug: str | None = None
 
 class IngestPayload(BaseModel):
     system: SystemConfig
@@ -113,13 +114,15 @@ def ingest_config(payload: IngestPayload, db: Session = Depends(get_db), api_key
             name=payload.system.name,
             label=payload.system.label,
             description=payload.system.description,
-            domain=payload.system.domain
+            domain=payload.system.domain,
+            repo_slug=payload.system.repo_slug
         )
         db.add(system)
     else:
         system.label = payload.system.label
         system.description = payload.system.description
         system.domain = payload.system.domain
+        system.repo_slug = payload.system.repo_slug
     
     db.flush() # Get ID if needed, though we use name relation
     
@@ -209,6 +212,7 @@ class RowConfig(BaseModel):
 class ProjectResponse(BaseModel):
     id: str
     name: str # The Label or Name
+    repo_slug: str | None = None
     rows: List[RowConfig]
 
 @app.get("/config", response_model=List[ProjectResponse])
@@ -227,6 +231,7 @@ def get_config(db: Session = Depends(get_db)):
         response.append(ProjectResponse(
             id=sys.name,
             name=sys.label or sys.name,
+            repo_slug=sys.repo_slug,
             rows=row_list
         ))
         

@@ -42,6 +42,7 @@ class System(Base):
     label = Column(String)
     description = Column(String)
     domain = Column(String)
+    repo_slug = Column(String, nullable=True)
 
 class Row(Base):
     __tablename__ = "rows"
